@@ -4,3 +4,4 @@ sqlalchemy
 lightgbm
 scikit-learn
 scipy
+biopython
