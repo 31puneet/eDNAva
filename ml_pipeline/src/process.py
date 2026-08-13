@@ -6,49 +6,61 @@ from sklearn.preprocessing import normalize
 import scipy.sparse
 
 def extract_kmers(sequence: str, k: int = 12):
-    """Yields k-mers of length k from a string sequence."""
     seq_len = len(sequence)
     for i in range(seq_len - k + 1):
         yield sequence[i:i+k]
 
 def process_fasta(fasta_path: str, k: int = 12, n_features: int = 2**20):
-    """Extracts k-mers and applies Feature Hashing in a memory-efficient stream."""
     print(f"Reading FASTA: {fasta_path}")
-    labels = []
     
-    def kmer_generator():
-        for record in SeqIO.parse(fasta_path, "fasta"):
-            label = record.id.split('|')[-1]
-            labels.append(label)
-            yield extract_kmers(str(record.seq).upper(), k)
+    train_labels = []
+    test_labels = []
+    train_kmers = []
+    test_kmers = []
+    
+    print("Parsing strictly isolated sequences...")
+    for record in SeqIO.parse(fasta_path, "fasta"):
+        # Header: seq_00000|Dreissena_polymorpha|Invasive|Train
+        parts = record.id.split('|')
+        species_label = parts[1].replace('_', ' ')
+        split_tag = parts[3]
+        
+        kmers = list(extract_kmers(str(record.seq).upper(), k))
+        
+        if split_tag == "Train":
+            train_labels.append(species_label)
+            train_kmers.append(kmers)
+        else:
+            test_labels.append(species_label)
+            test_kmers.append(kmers)
 
     print(f"Applying Feature Hashing (k={k}, features={n_features})...")
-    # input_type="string" expects an iterable of strings (our k-mer generator)
     hasher = FeatureHasher(n_features=n_features, input_type="string", alternate_sign=False)
-    X = hasher.transform(kmer_generator())
+    
+    X_train = hasher.transform(train_kmers)
+    X_test = hasher.transform(test_kmers)
     
     print("Applying L1 Normalization...")
-    X_normalized = normalize(X, norm='l1')
+    X_train_norm = normalize(X_train, norm='l1')
+    X_test_norm = normalize(X_test, norm='l1')
     
-    return X_normalized, np.array(labels)
+    return X_train_norm, np.array(train_labels), X_test_norm, np.array(test_labels)
 
 def main():
     data_dir = os.path.join(os.path.dirname(__file__), "..", "data")
     fasta_path = os.path.join(data_dir, "lake_ecosystem.fasta")
-    out_features = os.path.join(data_dir, "features.npz")
-    out_labels = os.path.join(data_dir, "labels.npy")
-
+    
     if not os.path.exists(fasta_path):
         print(f"Error: Could not find {fasta_path}. Run dataset.py first.")
         return
 
-    X, y = process_fasta(fasta_path, k=12)
+    X_train, y_train, X_test, y_test = process_fasta(fasta_path, k=12)
     
-    print(f"\nSaving sparse matrix (Shape: {X.shape}) to {os.path.abspath(out_features)}")
-    scipy.sparse.save_npz(out_features, X)
-    
-    print(f"Saving labels to {os.path.abspath(out_labels)}")
-    np.save(out_labels, y)
+    print("Saving separate Train and Test sparse matrices...")
+    scipy.sparse.save_npz(os.path.join(data_dir, "X_train.npz"), X_train)
+    scipy.sparse.save_npz(os.path.join(data_dir, "X_test.npz"), X_test)
+    np.save(os.path.join(data_dir, "y_train.npy"), y_train)
+    np.save(os.path.join(data_dir, "y_test.npy"), y_test)
     
     print("\nSuccess! Data processing complete.")
 

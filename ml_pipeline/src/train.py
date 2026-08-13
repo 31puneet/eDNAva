@@ -2,7 +2,6 @@ import os
 import numpy as np
 import scipy.sparse
 import joblib
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report
 import lightgbm as lgb
@@ -12,29 +11,19 @@ def train_and_evaluate():
     model_dir = os.path.join(os.path.dirname(__file__), "..", "models")
     os.makedirs(model_dir, exist_ok=True)
     
-    features_path = os.path.join(data_dir, "features.npz")
-    labels_path = os.path.join(data_dir, "labels.npy")
-    model_path = os.path.join(model_dir, "edna_model.pkl")
-    encoder_path = os.path.join(model_dir, "label_encoder.pkl")
+    print("Loading strictly isolated Train and Test matrices...")
+    X_train = scipy.sparse.load_npz(os.path.join(data_dir, "X_train.npz"))
+    X_test = scipy.sparse.load_npz(os.path.join(data_dir, "X_test.npz"))
+    y_train_str = np.load(os.path.join(data_dir, "y_train.npy"))
+    y_test_str = np.load(os.path.join(data_dir, "y_test.npy"))
     
-    if not os.path.exists(features_path) or not os.path.exists(labels_path):
-        print("Error: features.npz or labels.npy not found. Run process.py first.")
-        return None
-        
-    print("Loading sparse matrix and labels...")
-    X = scipy.sparse.load_npz(features_path)
-    y_str = np.load(labels_path)
-    
-    print("Encoding labels...")
+    print("Encoding 20 Target Species labels...")
     le = LabelEncoder()
-    y = le.fit_transform(y_str)
+    le.fit(np.concatenate([y_train_str, y_test_str]))
+    y_train = le.transform(y_train_str)
+    y_test = le.transform(y_test_str)
     
-    print("Splitting dataset (80% Train, 20% Test)...")
-    # stratify=y ensures the 80/20 split is perfectly balanced across all 3 classes
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
-    
-    print("Initializing LightGBM Model...")
-    # Parameters optimized for highly sparse datasets
+    print("Initializing LightGBM Model (20 Classes)...")
     model = lgb.LGBMClassifier(
         objective='multiclass',
         num_leaves=31,
@@ -43,15 +32,17 @@ def train_and_evaluate():
         n_jobs=-1
     )
     
-    print("Training model (this may take a minute)...")
+    print("Training model...")
     model.fit(X_train, y_train)
     
-    print("\n--- Evaluation on Test Set (4000 Sequences) ---")
+    print("\n--- Evaluation on Strictly Isolated Test Set ---")
     y_pred = model.predict(X_test)
     
-    # Print the text-based classification report (Precision, Recall, F1)
     report = classification_report(y_test, y_pred, target_names=le.classes_)
     print(report)
+    
+    model_path = os.path.join(model_dir, "edna_model.pkl")
+    encoder_path = os.path.join(model_dir, "label_encoder.pkl")
     
     print(f"\nSaving model to {os.path.abspath(model_path)}...")
     joblib.dump(model, model_path)

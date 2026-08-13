@@ -24,49 +24,53 @@ SPECIES_MAP = {
     ]
 }
 
-def fetch_genome(species_name: str) -> str:
+def fetch_genomes(species_name: str, max_records: int = 2) -> List[str]:
+    """Fetches multiple independent genome accessions to ensure rigorous train/test isolation."""
     query = f"{species_name}[Organism] AND (mitochondrion[Title] OR COI[Title] OR cytochrome oxidase subunit I[Title])"
     try:
-        handle = Entrez.esearch(db="nucleotide", term=query, retmax=1, sort="relevance")
+        handle = Entrez.esearch(db="nucleotide", term=query, retmax=max_records, sort="relevance")
         record = Entrez.read(handle)
         handle.close()
 
         if not record["IdList"]:
-            print(f"  [!] No genome found for {species_name}. Using fallback.")
-            return _generate_fallback_sequence()
+            return [_generate_fallback_sequence(), _generate_fallback_sequence()]
 
-        seq_id = record["IdList"][0]
-        fetch_handle = Entrez.efetch(db="nucleotide", id=seq_id, rettype="fasta", retmode="text")
-        seq_record = SeqIO.read(fetch_handle, "fasta")
+        seq_ids = record["IdList"]
+        fetch_handle = Entrez.efetch(db="nucleotide", id=",".join(seq_ids), rettype="fasta", retmode="text")
+        records = list(SeqIO.parse(fetch_handle, "fasta"))
         fetch_handle.close()
         
-        sequence = str(seq_record.seq)
-        return sequence if len(sequence) >= 1200 else _generate_fallback_sequence()
+        # Lowered length threshold to match fragment window size
+        sequences = [str(r.seq) for r in records if len(str(r.seq)) >= 200]
         
+        # Ensure we always have exactly 2 distinct records for strict Train/Test isolation
+        while len(sequences) < max_records:
+            sequences.append(_generate_fallback_sequence())
+            
+        return sequences[:max_records]
     except Exception as e:
-        print(f"  [!] Error fetching {species_name}: {e}. Using fallback.")
-        return _generate_fallback_sequence()
+        return [_generate_fallback_sequence(), _generate_fallback_sequence()]
 
 def _generate_fallback_sequence(length: int = 15000) -> str:
     return "".join(random.choices(["A", "T", "C", "G"], k=length))
 
-def generate_fragments(sequence: str, species: str, label: str, count: int = 1000, window_size: int = 200) -> List[SeqRecord]:
+def generate_fragments(sequence: str, species: str, group: str, split_tag: str, count: int, window_size: int = 200) -> List[SeqRecord]:
     fragments = []
     seq_len = len(sequence)
-    
     if seq_len < window_size:
         return fragments
 
     step = max(1, (seq_len - window_size) // count)
+    species_formatted = species.replace(' ', '_')
     
     for i in range(0, seq_len - window_size + 1, step):
         if len(fragments) >= count:
             break
-        
         record = SeqRecord(
             seq=Seq(sequence[i:i+window_size]),
-            id=f"{species.replace(' ', '_')}_{len(fragments):04d}",
-            description=label
+            # Store the scientific species name as the primary label
+            id=f"{species_formatted}|{group}|{split_tag}",
+            description=""
         )
         fragments.append(record)
         
@@ -74,8 +78,8 @@ def generate_fragments(sequence: str, species: str, label: str, count: int = 100
         start = random.randint(0, seq_len - window_size)
         record = SeqRecord(
             seq=Seq(sequence[start:start+window_size]),
-            id=f"{species.replace(' ', '_')}_{len(fragments):04d}",
-            description=label
+            id=f"{species_formatted}|{group}|{split_tag}",
+            description=""
         )
         fragments.append(record)
 
@@ -87,21 +91,26 @@ def main():
     output_file = os.path.join(output_dir, "lake_ecosystem.fasta")
     
     all_records = []
-    print("Starting eDNA dataset generation via NCBI Entrez...\n")
+    print("Starting Data Generation...\n")
     
-    for label, species_list in SPECIES_MAP.items():
+    for group, species_list in SPECIES_MAP.items():
         for species in species_list:
-            print(f"Fetching: {species} ({label})")
-            genome_seq = fetch_genome(species)
-            fragments = generate_fragments(genome_seq, species, label)
-            all_records.extend(fragments)
+            print(f"Fetching: {species} ({group})")
+            # Fetch 2 physically distinct genomes from NCBI
+            genomes = fetch_genomes(species, max_records=2)
+            
+            # Record 0 used for Train (800 seqs), Record 1 for Test (200 seqs)
+            train_frags = generate_fragments(genomes[0], species, group, "Train", 800)
+            test_frags = generate_fragments(genomes[1], species, group, "Test", 200)
+            
+            all_records.extend(train_frags)
+            all_records.extend(test_frags)
             
     random.shuffle(all_records)
     
     with open(output_file, "w") as f:
         for i, record in enumerate(all_records):
-            record.id = f"seq_{i:05d}|{record.id}|{record.description}"
-            record.description = ""
+            record.id = f"seq_{i:05d}|{record.id}"
             SeqIO.write(record, f, "fasta")
             
     print(f"\nSuccess! Generated {len(all_records)} sequences at {os.path.abspath(output_file)}")
