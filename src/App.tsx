@@ -57,21 +57,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F7F6F1] text-[#222222]">
-      {/* Top Utility & Emblem Header Bar */}
-      <div className="bg-[#1B5E20] text-white py-1.5 px-4 text-xs font-semibold">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Building2 className="w-3.5 h-3.5 text-[#A5D6A7]" />
-            <span>National Environmental DNA Biodiversity Portal • SIH 2025</span>
-          </div>
-          <div className="hidden sm:flex items-center gap-4 text-[11px] text-[#C8E6C9]">
-            <span>Platform: eDNA BioTrack</span>
-            <span>•</span>
-            <span>Dataset: 200 Real Reads</span>
-          </div>
-        </div>
-      </div>
-
       {/* Main Government Portal Header */}
       <header className="bg-white border-b border-[#D7D6D0] sticky top-0 z-50 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
@@ -215,72 +200,19 @@ export default function App() {
         {currentPage === 'about' && <AboutPage navigate={navigate} />}
       </main>
 
-      {/* Footer with SIH 2025 Credit Line */}
-      <footer className="bg-[#2E7D32] text-white border-t border-[#1B5E20] mt-16 py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-xs">
-            <div className="space-y-2 md:col-span-2">
-              <div className="font-bold text-sm text-white flex items-center gap-2">
-                <Leaf className="w-4 h-4 text-[#A5D6A7]" />
-                <span>eDNA BioTrack — National Biodiversity Portal</span>
-              </div>
-              <p className="text-[#C8E6C9] leading-relaxed max-w-md">
-                An original web platform built for environmental DNA sequence validation, automated quality control metrics, and standardized taxonomy classification services.
-              </p>
-              <div className="pt-2 flex items-center gap-2 text-xs font-semibold text-[#FFF59D]">
-                <Award className="w-4 h-4 text-[#FFF59D]" />
-                <span>Built for Smart India Hackathon (SIH 2025)</span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="font-bold text-sm text-[#A5D6A7] uppercase tracking-wider">Quick Links</div>
-              <ul className="space-y-1.5 text-[#C8E6C9]">
-                <li>
-                  <button onClick={() => navigate('home')} className="hover:underline cursor-pointer">
-                    Home Portal Overview
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('dashboard')} className="hover:underline cursor-pointer">
-                    Sequence Reads Console
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('upload')} className="hover:underline cursor-pointer">
-                    Upload Sample Dataset
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('species')} className="hover:underline cursor-pointer">
-                    Species Info Register
-                  </button>
-                </li>
-              </ul>
-            </div>
-
-            <div className="space-y-2">
-              <div className="font-bold text-sm text-[#A5D6A7] uppercase tracking-wider">Project Notice</div>
-              <ul className="space-y-1.5 text-[#C8E6C9]">
-                <li>SIH 2025 Problem Statement Solution</li>
-                <li>Open Access Sequence Inspection</li>
-                <li>Client-Side Privacy & Blob Exports</li>
-                <li>ISO & Gene Barcode Standards</li>
-              </ul>
-            </div>
+      {/* Official Clean Footer */}
+      <footer className="bg-[#2E7D32] text-white border-t border-[#1B5E20] mt-16 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+          <div className="flex items-center gap-2">
+            <Leaf className="w-4 h-4 text-[#A5D6A7]" />
+            <span className="font-bold text-sm text-white">eDNA BioTrack — National Biodiversity Portal</span>
           </div>
+          <p className="text-xs text-[#C8E6C9] leading-relaxed max-w-xl">
+            An original web platform built for environmental DNA sequence validation, automated quality control metrics, and standardized taxonomy classification services.
+          </p>
 
-          <div className="pt-6 border-t border-[#1B5E20] flex flex-col sm:flex-row items-center justify-between text-xs text-[#C8E6C9] gap-4">
-            <div>© 2025-2026 eDNA BioTrack. Built for Smart India Hackathon (SIH 2025). All Rights Reserved.</div>
-            <div className="flex items-center gap-4">
-              <a href="#/about" onClick={() => navigate('about')} className="hover:underline">
-                Terms of Use
-              </a>
-              <span>•</span>
-              <a href="#/about" onClick={() => navigate('about')} className="hover:underline">
-                SIH Documentation
-              </a>
-            </div>
+          <div className="pt-4 border-t border-[#1B5E20] text-xs text-[#C8E6C9]">
+            © 2025-2026 eDNA BioTrack. All Rights Reserved.
           </div>
         </div>
       </footer>

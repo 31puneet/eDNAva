@@ -87,24 +87,6 @@ export default function HomePage({ navigate }: Props) {
         </div>
       </section>
 
-      {/* Live Dataset Stats Strip */}
-      <section className="space-y-3">
-        <div className="text-xs font-bold uppercase tracking-wider text-[#1B5E20] flex items-center gap-1.5">
-          <Dna className="w-4 h-4" />
-          <span>Active Dataset Summary (Live Computed Metrics)</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {realStats.map((stat, i) => (
-            <div key={i} className="gov-card p-5 border-t-2 border-t-[#2E7D32]">
-              <div className="text-xs text-[#666666] font-medium uppercase tracking-wider">{stat.label}</div>
-              <div className="text-2xl font-extrabold text-[#1B5E20] my-1">{stat.value}</div>
-              <div className="text-xs text-[#555555]">{stat.sub}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* "How It Works" 4-Step Section */}
       <section className="gov-card p-8 space-y-6">
         <div className="border-b border-[#D7D6D0] pb-4">

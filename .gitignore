@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 node_modules/
 dist/
 build/
@@ -18,3 +19,13 @@ logs/
 # beside it.
 /.plugins/
 /.opencode-skills/
+=======
+venv/
+__pycache__/
+node_modules/
+.next/
+.env
+*.fasta
+*.npz
+*.npy
+>>>>>>> origin/main
