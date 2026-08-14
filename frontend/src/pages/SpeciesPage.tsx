@@ -1,28 +1,39 @@
 import { useState } from 'react';
-import { Search, Download, ChevronDown, ChevronUp } from 'lucide-react';
-import { SequenceRecord, exportSingleReadToCSV } from '../data/sequencesDataset';
+import { Search, ShieldAlert, ShieldCheck, Microscope } from 'lucide-react';
 
 interface Props {
-  dataset: SequenceRecord[];
+  dataset: any[]; // Kept so we don't break App.tsx which passes dataset to this page
 }
+
+const TARGET_SPECIES = [
+  { name: 'Dreissena polymorpha', desc: 'The zebra mussel is a small freshwater mussel originally native to the lakes of southern Russia and Ukraine. It is a highly aggressive invasive species that attaches to hard surfaces and rapidly biofouls water infrastructure, drastically altering local ecosystems by outcompeting native filter feeders.' },
+  { name: 'Micropterus salmoides', desc: 'The largemouth bass is a carnivorous freshwater gamefish native to eastern and central North America. It serves as an apex predator in many aquatic environments, playing a crucial role in regulating populations of smaller fish and maintaining the balance of the ecosystem.' },
+  { name: 'Daphnia pulex', desc: 'The water flea is a microscopic planktonic crustacean found in diverse permanent freshwater habitats across the Americas, Europe, and Australia. It is a keystone species in freshwater food webs, serving as a primary food source for many small fish and aquatic insects.' },
+  { name: 'Neogobius melanostomus', desc: 'The round goby is an invasive bottom-dwelling fish native to the Black and Caspian seas. It aggressively outcompetes native benthic fish for food and habitat, and is known for preying on the eggs of native species, leading to severe declines in local biodiversity.' },
+  { name: 'Cyprinus carpio', desc: 'The common carp is a widespread freshwater fish of eutrophic waters in lakes and large rivers in Europe and Asia. Introduced globally, it is considered highly invasive as its feeding behavior uproots aquatic vegetation and increases water turbidity, degrading water quality.' },
+  { name: 'Salvelinus fontinalis', desc: 'The brook trout is a species of freshwater fish in the salmon family native to Eastern North America. It is highly sensitive to poor water quality and pollution, making it an excellent indicator species for monitoring the health and purity of cold-water streams.' },
+  { name: 'Pterois volitans', desc: 'The red lionfish is a venomous marine fish native to the Indo-Pacific region. As a highly successful invasive species in the Atlantic Ocean, it has no natural predators and decimates local reef fish populations, severely impacting coral reef ecosystems.' },
+  { name: 'Carcinus maenas', desc: 'The European green crab is a versatile and resilient coastal predator native to the northeast Atlantic Ocean. It is a globally damaging invasive species that preys heavily on native bivalves, crabs, and juvenile fish, causing massive economic losses to shellfish industries.' },
+  { name: 'Petromyzon marinus', desc: 'The sea lamprey is a parasitic jawless fish native to the Atlantic Ocean. When introduced to the Great Lakes, it became a devastating invasive predator that uses its suction-cup mouth to latch onto and feed on the blood and fluids of native fish like lake trout.' },
+  { name: 'Acipenser fulvescens', desc: 'The lake sturgeon is a temperate freshwater fish native to the interconnected aquatic systems of North America. It is a slow-growing, late-maturing species that is currently threatened by habitat loss and historical overfishing, making it a key conservation target.' },
+  { name: 'Esox lucius', desc: 'The northern pike is a predatory freshwater fish found throughout the northern hemisphere. Known for its aggressive ambush hunting tactics, it helps maintain healthy populations of prey species and is considered a critical component of many freshwater lake ecosystems.' },
+  { name: 'Oncorhynchus mykiss', desc: 'The rainbow trout is a species of salmonid native to cold-water tributaries of the Pacific Ocean in Asia and North America. It is highly valued for sport fishing and aquaculture, but can outcompete native fish when introduced outside of its natural range.' },
+  { name: 'Didymosphenia geminata', desc: 'Often called "rock snot," this freshwater diatom produces massive amounts of stalk material to form thick, brown mats on stream bottoms. Although native to northern regions, it acts invasively by smothering benthic habitats and altering invertebrate communities.' },
+  { name: 'Channa argus', desc: 'The northern snakehead is a predatory fish native to China, Russia, and the Korean Peninsula. It is a highly aggressive invasive species in North America that can survive in poorly oxygenated water and even out of water for days, posing a severe threat to native fish and amphibians.' },
+  { name: 'Asterias rubens', desc: 'The common starfish is a marine invertebrate found in the northeastern Atlantic Ocean. As a keystone predator in benthic marine ecosystems, it primarily feeds on bivalve mollusks, playing a critical role in controlling mussel populations and maintaining biodiversity.' },
+  { name: 'Mnemiopsis leidyi', desc: 'The warty comb jelly is a species of tentaculate ctenophore native to the western Atlantic coastal waters. When introduced to the Black Sea via ballast water, its explosive population growth devastated local zooplankton and caused the collapse of commercial fisheries.' },
+  { name: 'Hypophthalmichthys molitrix', desc: 'The silver carp is a species of freshwater cyprinid fish native to eastern Asia. Cultivated globally for aquaculture, it has escaped into wild river systems where its massive filter-feeding capacity outcompetes native species for plankton, drastically altering the food web.' },
+  { name: 'Craspedacusta sowerbii', desc: 'The freshwater jellyfish is a hydrozoan native to the Yangtze River basin in China. Now found in freshwater lakes and reservoirs worldwide, it intermittently forms massive, unpredictable blooms, though its long-term ecological impact on native zooplankton remains under study.' },
+  { name: 'Eriocheir sinensis', desc: 'The Chinese mitten crab is a medium-sized burrowing crab native to the coastal estuaries of eastern Asia. It is a highly invasive species in Europe and North America that causes severe structural damage to riverbanks through its extensive burrowing and outcompetes native crabs.' },
+  { name: 'Potamopyrgus antipodarum', desc: 'The New Zealand mud snail is a tiny aquatic snail that reproduces rapidly via parthenogenesis. As an invasive species globally, it achieves incredibly high population densities that consume the primary food sources of native macroinvertebrates, altering the entire ecosystem structure.' }
+];
 
 export default function SpeciesPage({ dataset }: Props) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [page, setPage] = useState(0);
-  const PER_PAGE = 15;
 
-  const filteredRecords = dataset.filter((record) =>
-    record.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.seq.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredSpecies = TARGET_SPECIES.filter(s => 
+    s.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const paginatedRecords = filteredRecords.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
-  const totalPages = Math.ceil(filteredRecords.length / PER_PAGE);
-
-  const toggleExpand = (id: string) => {
-    setExpandedId(expandedId === id ? null : id);
-  };
 
   return (
     <div className="space-y-8 pb-12">
@@ -31,9 +42,9 @@ export default function SpeciesPage({ dataset }: Props) {
         <div className="text-xs font-bold text-[#2E7D32] uppercase tracking-wider mb-1">
           Official Sequence Register
         </div>
-        <h1 className="text-2xl font-extrabold text-[#1B5E20]">Test Samples</h1>
+        <h1 className="text-2xl font-extrabold text-[#1B5E20]">Target Species Database</h1>
         <p className="text-xs text-[#555555] mt-1">
-          Listing of all {dataset.length} raw sequence reads currently loaded in the system.
+          Database of recognized native and invasive indicator species monitored by the eDNA pipeline.
         </p>
       </div>
 
@@ -55,13 +66,13 @@ export default function SpeciesPage({ dataset }: Props) {
         </div>
       </div>
 
-      {/* Non-card Sequence Reads Register List */}
+      {/* Species Database Section */}
       <div className="space-y-4 pt-2">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-[#D7D6D0] pb-3">
           <div>
-            <h2 className="text-lg font-extrabold text-[#1B5E20]">Test Samples</h2>
+            <h2 className="text-lg font-extrabold text-[#1B5E20]">Registered Organisms</h2>
             <p className="text-xs text-[#555555]">
-              Showing {filteredRecords.length} sequence reads. Expanded nucleotide view & single CSV record downloads.
+              Showing {filteredSpecies.length} monitored target species.
             </p>
           </div>
 
@@ -69,107 +80,34 @@ export default function SpeciesPage({ dataset }: Props) {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#777777]" />
             <input
               type="text"
-              placeholder="Search read_id (e.g. SEQ_0012)..."
+              placeholder="Search by scientific or common name..."
               value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-xs rounded-sm border border-[#D7D6D0] bg-white text-[#222222] focus:outline-none focus:border-[#2E7D32]"
             />
           </div>
         </div>
 
-        {/* Clean Line-Item Register List */}
-        <div className="divide-y divide-[#D7D6D0] border-t border-b border-[#D7D6D0] bg-white">
-          {paginatedRecords.length === 0 ? (
-            <div className="py-8 text-center text-xs text-[#666666]">
-              No sequence records found for "{searchTerm}".
+        {/* Official Register List */}
+        <div className="bg-white pt-4">
+          {filteredSpecies.map((species, idx) => (
+            <div key={idx} className="mb-6">
+              <p className="text-[13px] text-[#222222] leading-relaxed">
+                <strong className="text-[#1B5E20] italic">{idx + 1}. {species.name}: </strong> 
+                {species.desc}
+              </p>
             </div>
-          ) : (
-            paginatedRecords.map((record) => {
-              const isExpanded = expandedId === record.id;
-              return (
-                <div key={record.id} className="py-3 px-4 hover:bg-[#FAF9F5] transition-colors space-y-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono font-bold text-[#1B5E20] text-sm w-24 shrink-0">
-                        {record.id}
-                      </span>
-                      <span className="text-[#555555] font-semibold">{record.len} bp</span>
-                      <span className="text-[#777777]">•</span>
-                      <span className="font-mono font-bold text-[#2E7D32]">GC: {record.gc}%</span>
-                      <span className="text-[#777777]">•</span>
-                      <span className="status-badge-pending text-[11px]">{record.status}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => toggleExpand(record.id)}
-                        className="px-2.5 py-1 text-xs text-[#1B5E20] font-bold border border-[#A5D6A7] bg-[#E8F5E9] rounded-sm hover:bg-[#C8E6C9] flex items-center gap-1 cursor-pointer"
-                      >
-                        {isExpanded ? (
-                          <>
-                            <span>Hide Sequence</span>
-                            <ChevronUp className="w-3.5 h-3.5" />
-                          </>
-                        ) : (
-                          <>
-                            <span>View Full Sequence</span>
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          </>
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => exportSingleReadToCSV(record)}
-                        className="px-2.5 py-1 text-xs text-[#444444] border border-[#D7D6D0] bg-white rounded-sm hover:bg-[#FAF9F5] flex items-center gap-1 cursor-pointer"
-                        title="Download CSV record"
-                      >
-                        <Download className="w-3.5 h-3.5 text-[#2E7D32]" />
-                        <span>CSV</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Sequence Preview / Full Sequence */}
-                  <div className="text-xs">
-                    <div className="dna-seq-box break-all leading-relaxed bg-[#FAF9F5] p-2 text-[#333333] border border-[#E0E0E0] rounded-sm font-mono text-[11px]">
-                      {isExpanded ? record.seq : `${record.seq.substring(0, 120)}...`}
-                    </div>
-                  </div>
-                </div>
-              );
-            })
+          ))}
+          {filteredSpecies.length === 0 && (
+            <div className="py-12 text-center text-sm text-[#666666]">
+              No registered species found matching "{searchTerm}".
+            </div>
           )}
         </div>
-
-        {/* Pagination controls */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between pt-3 text-xs text-[#555555]">
-            <div>
-              Page <span className="font-bold text-[#222222]">{page + 1}</span> of{' '}
-              <span className="font-bold text-[#222222]">{totalPages}</span> ({filteredRecords.length} total records)
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0}
-                className="px-3 py-1 border border-[#D7D6D0] bg-white rounded-sm disabled:opacity-40 cursor-pointer"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                disabled={page >= totalPages - 1}
-                className="px-3 py-1 border border-[#D7D6D0] bg-white rounded-sm disabled:opacity-40 cursor-pointer"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Science Banner Image 2: Laboratory High-Throughput Sequencing */}
-      <div className="gov-card overflow-hidden">
+      <div className="gov-card overflow-hidden mt-8">
         <div className="relative h-44 sm:h-52 w-full bg-[#1B5E20]">
           <img
             src="https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=1200&h=400&fit=crop&auto=format"
