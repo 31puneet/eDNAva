@@ -122,17 +122,6 @@ export default function App() {
             </button>
           </nav>
 
-          {/* Outlined "Upload Sample" CTA Button (Right) */}
-          <div className="hidden md:flex items-center gap-3">
-            <button
-              onClick={() => navigate('upload')}
-              className="btn-gov-outline flex items-center gap-2 text-xs"
-            >
-              <Upload className="w-4 h-4 text-[#2E7D32]" />
-              <span>Upload Sample</span>
-            </button>
-          </div>
-
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -169,15 +158,6 @@ export default function App() {
             >
               About Section
             </button>
-            <div className="pt-2">
-              <button
-                onClick={() => navigate('upload')}
-                className="w-full btn-gov-outline text-xs flex items-center justify-center gap-2"
-              >
-                <Upload className="w-4 h-4" />
-                <span>Upload Sample</span>
-              </button>
-            </div>
           </div>
         )}
       </header>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Filter, Info, Dna, Layers, ChevronDown, ChevronUp, Download } from 'lucide-react';
+import { Search, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import { SequenceRecord, exportSingleReadToCSV } from '../data/sequencesDataset';
 
 interface Props {
@@ -10,7 +10,7 @@ export default function SpeciesPage({ dataset }: Props) {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
-  const PER_PAGE = 20;
+  const PER_PAGE = 15;
 
   const filteredRecords = dataset.filter((record) =>
     record.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -26,28 +26,15 @@ export default function SpeciesPage({ dataset }: Props) {
 
   return (
     <div className="space-y-8 pb-12">
-      {/* Official Register Header */}
+      {/* Page Header */}
       <div className="border-b border-[#D7D6D0] pb-4">
         <div className="text-xs font-bold text-[#2E7D32] uppercase tracking-wider mb-1">
-          Official Sequence Register & Taxonomy Status
+          Official Sequence Register
         </div>
-        <h1 className="text-2xl font-extrabold text-[#1B5E20]">eDNA Dataset Sequence Register</h1>
+        <h1 className="text-2xl font-extrabold text-[#1B5E20]">Test Samples</h1>
         <p className="text-xs text-[#555555] mt-1">
-          Official listing of all {dataset.length} raw sequence reads currently cataloged in the portal dataset.
+          Listing of all {dataset.length} raw sequence reads currently loaded in the system.
         </p>
-      </div>
-
-      {/* Upfront Honest Classification Notice */}
-      <div className="gov-card p-5 bg-[#FAF9F5] border-l-4 border-l-[#2E7D32]">
-        <div className="flex items-start gap-3">
-          <Info className="w-5 h-5 text-[#2E7D32] shrink-0 mt-0.5" />
-          <div className="space-y-1 text-xs text-[#333333]">
-            <div className="font-bold text-sm text-[#1B5E20]">Taxonomic Classification Status</div>
-            <p className="leading-relaxed">
-              Species-level identification is automatically generated once the AI classification pipeline processes these sequence reads against standard reference gene databases. Shown below is the official raw sequence read register currently loaded in the system.
-            </p>
-          </div>
-        </div>
       </div>
 
       {/* Science Banner Image 1: Field eDNA Sampling */}
@@ -68,19 +55,21 @@ export default function SpeciesPage({ dataset }: Props) {
         </div>
       </div>
 
-      {/* List / Register Table Layout */}
-      <div className="gov-card p-6 space-y-4">
+      {/* Non-card Sequence Reads Register List */}
+      <div className="space-y-4 pt-2">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-[#D7D6D0] pb-3">
           <div>
-            <h2 className="text-base font-bold text-[#1B5E20]">Cataloged Sequence Reads Directory</h2>
-            <p className="text-xs text-[#555555]">Scannable record list with computed length, GC ratio %, and full sequence viewer.</p>
+            <h2 className="text-lg font-extrabold text-[#1B5E20]">Test Samples</h2>
+            <p className="text-xs text-[#555555]">
+              Showing {filteredRecords.length} sequence reads. Expanded nucleotide view & single CSV record downloads.
+            </p>
           </div>
 
           <div className="relative w-full sm:w-80">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#777777]" />
             <input
               type="text"
-              placeholder="Search by read_id (e.g. SEQ_0012)..."
+              placeholder="Search read_id (e.g. SEQ_0012)..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
               className="w-full pl-9 pr-3 py-2 text-xs rounded-sm border border-[#D7D6D0] bg-white text-[#222222] focus:outline-none focus:border-[#2E7D32]"
@@ -88,113 +77,75 @@ export default function SpeciesPage({ dataset }: Props) {
           </div>
         </div>
 
-        {/* Clean Scannable Register Table */}
-        <div className="overflow-x-auto border border-[#D7D6D0] rounded-sm">
-          <table className="gov-table">
-            <thead>
-              <tr>
-                <th>Read ID</th>
-                <th>Sequence Length</th>
-                <th>GC Content %</th>
-                <th>Classification</th>
-                <th>Taxonomy Hierarchy (Future)</th>
-                <th>Sequence Preview & Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedRecords.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-[#666666]">
-                    No matching sequence records found for "{searchTerm}".
-                  </td>
-                </tr>
-              ) : (
-                paginatedRecords.map((record) => {
-                  const isExpanded = expandedId === record.id;
-                  return (
-                    <tr key={record.id} className="align-top hover:bg-[#FAF9F5]">
-                      {/* Read ID */}
-                      <td className="font-mono font-bold text-[#1B5E20] py-3">{record.id}</td>
+        {/* Clean Line-Item Register List */}
+        <div className="divide-y divide-[#D7D6D0] border-t border-b border-[#D7D6D0] bg-white">
+          {paginatedRecords.length === 0 ? (
+            <div className="py-8 text-center text-xs text-[#666666]">
+              No sequence records found for "{searchTerm}".
+            </div>
+          ) : (
+            paginatedRecords.map((record) => {
+              const isExpanded = expandedId === record.id;
+              return (
+                <div key={record.id} className="py-3 px-4 hover:bg-[#FAF9F5] transition-colors space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono font-bold text-[#1B5E20] text-sm w-24 shrink-0">
+                        {record.id}
+                      </span>
+                      <span className="text-[#555555] font-semibold">{record.len} bp</span>
+                      <span className="text-[#777777]">•</span>
+                      <span className="font-mono font-bold text-[#2E7D32]">GC: {record.gc}%</span>
+                      <span className="text-[#777777]">•</span>
+                      <span className="status-badge-pending text-[11px]">{record.status}</span>
+                    </div>
 
-                      {/* Length */}
-                      <td className="py-3">{record.len} bp</td>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleExpand(record.id)}
+                        className="px-2.5 py-1 text-xs text-[#1B5E20] font-bold border border-[#A5D6A7] bg-[#E8F5E9] rounded-sm hover:bg-[#C8E6C9] flex items-center gap-1 cursor-pointer"
+                      >
+                        {isExpanded ? (
+                          <>
+                            <span>Hide Sequence</span>
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          </>
+                        ) : (
+                          <>
+                            <span>View Full Sequence</span>
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </>
+                        )}
+                      </button>
 
-                      {/* GC % */}
-                      <td className="font-mono text-[#2E7D32] font-semibold py-3">{record.gc}%</td>
+                      <button
+                        onClick={() => exportSingleReadToCSV(record)}
+                        className="px-2.5 py-1 text-xs text-[#444444] border border-[#D7D6D0] bg-white rounded-sm hover:bg-[#FAF9F5] flex items-center gap-1 cursor-pointer"
+                        title="Download CSV record"
+                      >
+                        <Download className="w-3.5 h-3.5 text-[#2E7D32]" />
+                        <span>CSV</span>
+                      </button>
+                    </div>
+                  </div>
 
-                      {/* Status */}
-                      <td className="py-3">
-                        <span className="status-badge-pending">
-                          {record.status}
-                        </span>
-                      </td>
-
-                      {/* Taxonomy Hierarchy Placeholder Column */}
-                      <td className="py-3 text-xs text-[#777777] italic">
-                        <div className="text-[11px] font-sans text-[#666666]">
-                          Kingdom &gt; Phylum &gt; Class &gt; Order &gt; Family &gt; Genus &gt; Species
-                        </div>
-                        <span className="text-[10px] text-[#E65100] font-semibold">Awaiting Classifier</span>
-                      </td>
-
-                      {/* Sequence Preview & Expand Toggle */}
-                      <td className="py-3">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="dna-seq-box max-w-[220px] sm:max-w-[300px] truncate inline-block">
-                              {record.seq}
-                            </span>
-                            <button
-                              onClick={() => toggleExpand(record.id)}
-                              className="px-2 py-1 text-xs text-[#2E7D32] font-semibold hover:underline flex items-center gap-1 cursor-pointer shrink-0"
-                            >
-                              {isExpanded ? (
-                                <>
-                                  <span>Collapse</span>
-                                  <ChevronUp className="w-3.5 h-3.5" />
-                                </>
-                              ) : (
-                                <>
-                                  <span>View Full</span>
-                                  <ChevronDown className="w-3.5 h-3.5" />
-                                </>
-                              )}
-                            </button>
-                          </div>
-
-                          {/* Expanded Full Sequence Box */}
-                          {isExpanded && (
-                            <div className="p-3 bg-[#F5F5F5] border border-[#D7D6D0] rounded-sm space-y-2 text-xs">
-                              <div className="font-bold text-[#1B5E20]">Full Nucleotide Sequence Read ({record.len} bp):</div>
-                              <div className="dna-seq-box text-xs break-all leading-relaxed bg-white p-2">
-                                {record.seq}
-                              </div>
-                              <div className="flex justify-end">
-                                <button
-                                  onClick={() => exportSingleReadToCSV(record)}
-                                  className="px-3 py-1 bg-[#E8F5E9] text-[#1B5E20] border border-[#A5D6A7] font-semibold text-[11px] rounded-sm hover:bg-[#C8E6C9] flex items-center gap-1 cursor-pointer"
-                                >
-                                  <Download className="w-3 h-3" />
-                                  <span>Export CSV Record</span>
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                  {/* Sequence Preview / Full Sequence */}
+                  <div className="text-xs">
+                    <div className="dna-seq-box break-all leading-relaxed bg-[#FAF9F5] p-2 text-[#333333] border border-[#E0E0E0] rounded-sm font-mono text-[11px]">
+                      {isExpanded ? record.seq : `${record.seq.substring(0, 120)}...`}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
 
-        {/* Pagination */}
+        {/* Pagination controls */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between pt-3 text-xs text-[#555555]">
             <div>
-              Showing Page <span className="font-bold text-[#222222]">{page + 1}</span> of{' '}
+              Page <span className="font-bold text-[#222222]">{page + 1}</span> of{' '}
               <span className="font-bold text-[#222222]">{totalPages}</span> ({filteredRecords.length} total records)
             </div>
             <div className="flex items-center gap-2">
@@ -203,14 +154,14 @@ export default function SpeciesPage({ dataset }: Props) {
                 disabled={page === 0}
                 className="px-3 py-1 border border-[#D7D6D0] bg-white rounded-sm disabled:opacity-40 cursor-pointer"
               >
-                Previous Page
+                Previous
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
                 className="px-3 py-1 border border-[#D7D6D0] bg-white rounded-sm disabled:opacity-40 cursor-pointer"
               >
-                Next Page
+                Next
               </button>
             </div>
           </div>

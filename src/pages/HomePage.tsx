@@ -1,55 +1,11 @@
-import { Leaf, Dna, FileText, ArrowRight, ChevronRight, Activity, Microscope, CheckSquare } from 'lucide-react';
+import { Leaf, ArrowRight, ChevronRight } from 'lucide-react';
 import { type Page } from '../App';
-import { INITIAL_DATASET_SEQUENCES } from '../data/sequencesDataset';
 
 interface Props {
   navigate: (page: Page) => void;
 }
 
 export default function HomePage({ navigate }: Props) {
-  // Live computed stats from the 200 real CSV sequence read records
-  const totalReads = INITIAL_DATASET_SEQUENCES.length; // 200
-  const avgLength = (
-    INITIAL_DATASET_SEQUENCES.reduce((acc, curr) => acc + curr.len, 0) / totalReads
-  ).toFixed(1);
-  const avgGC = (
-    INITIAL_DATASET_SEQUENCES.reduce((acc, curr) => acc + curr.gc, 0) / totalReads
-  ).toFixed(1);
-
-  const realStats = [
-    { label: 'Total Sequence Reads', value: `${totalReads} Reads`, sub: 'Parsed from active dataset' },
-    { label: 'Avg Sequence Length', value: `${avgLength} bp`, sub: 'Standardized COI marker length' },
-    { label: 'Avg GC Content', value: `${avgGC}%`, sub: 'Calculated from nucleotide reads' },
-    { label: 'AI Classification Status', value: 'Pending', sub: 'Model execution required' },
-  ];
-
-  const pipelineSteps = [
-    {
-      num: '1',
-      title: 'Sequence Upload',
-      desc: 'Submit raw environmental DNA sequence files (.csv, .fasta) containing read_id and dna_sequence strings.',
-      icon: FileText,
-    },
-    {
-      num: '2',
-      title: 'Sequence QC & Metrics',
-      desc: 'Automated calculation of sequence read length and nucleotide GC content percentage.',
-      icon: Activity,
-    },
-    {
-      num: '3',
-      title: 'AI Classification',
-      desc: 'Deep learning taxonomy classifier matches gene barcodes against official reference databases.',
-      icon: Microscope,
-    },
-    {
-      num: '4',
-      title: 'Biodiversity Portal Results',
-      desc: 'View validated taxonomy rankings, export individual read records, or download bulk dataset CSV reports.',
-      icon: CheckSquare,
-    },
-  ];
-
   return (
     <div className="space-y-10 pb-12">
       {/* Official Government Hero Banner */}
@@ -84,37 +40,6 @@ export default function HomePage({ navigate }: Props) {
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-        </div>
-      </section>
-
-      {/* "How It Works" 4-Step Section */}
-      <section className="gov-card p-8 space-y-6">
-        <div className="border-b border-[#D7D6D0] pb-4">
-          <h2 className="text-xl font-bold text-[#1B5E20] flex items-center gap-2">
-            <Microscope className="w-5 h-5 text-[#2E7D32]" />
-            <span>How The Pipeline Process Works</span>
-          </h2>
-          <p className="text-xs text-[#555555] mt-1">
-            Standardized four-stage workflow for processing environmental DNA sequence samples.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {pipelineSteps.map((step, idx) => {
-            const Icon = step.icon;
-            return (
-              <div key={idx} className="p-5 border border-[#E0E0E0] bg-[#FAF9F5] rounded-sm space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="w-7 h-7 rounded-full bg-[#2E7D32] text-white flex items-center justify-center font-bold text-xs">
-                    {step.num}
-                  </span>
-                  <Icon className="w-5 h-5 text-[#2E7D32]" />
-                </div>
-                <h3 className="text-sm font-bold text-[#222222]">{step.title}</h3>
-                <p className="text-xs text-[#555555] leading-relaxed">{step.desc}</p>
-              </div>
-            );
-          })}
         </div>
       </section>
 
