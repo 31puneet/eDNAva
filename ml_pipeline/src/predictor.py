@@ -1,4 +1,5 @@
 import os
+import sys
 import joblib
 import numpy as np
 from sklearn.feature_extraction import FeatureHasher
@@ -76,3 +77,4 @@ if __name__ == "__main__":
         print(f"\nResult: {result}")
     except Exception as e:
         print(f"Test failed: {e}")
+        sys.exit(1)

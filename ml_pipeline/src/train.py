@@ -19,7 +19,7 @@ def train_and_evaluate():
     
     print("Encoding 20 Target Species labels...")
     le = LabelEncoder()
-    le.fit(np.concatenate([y_train_str, y_test_str]))
+    le.fit(y_train_str)
     y_train = le.transform(y_train_str)
     y_test = le.transform(y_test_str)
     

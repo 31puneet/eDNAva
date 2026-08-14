@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 from Bio import SeqIO
 from sklearn.feature_extraction import FeatureHasher
@@ -52,7 +53,7 @@ def main():
     
     if not os.path.exists(fasta_path):
         print(f"Error: Could not find {fasta_path}. Run dataset.py first.")
-        return
+        sys.exit(1)
 
     X_train, y_train, X_test, y_test = process_fasta(fasta_path, k=12)
     
