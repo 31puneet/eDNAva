@@ -1,4 +1,5 @@
-import { Download, Plus, FileText, Activity, Microscope, CheckSquare } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Download, Plus, FileText, Activity, Microscope, CheckSquare, Search, Sparkles, RefreshCw } from 'lucide-react';
 import { type Page } from '../App';
 import { SequenceRecord, exportBulkToCSV } from '../data/sequencesDataset';
 
@@ -8,6 +9,117 @@ interface Props {
 }
 
 export default function DashboardPage({ navigate, dataset }: Props) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [records, setRecords] = useState<SequenceRecord[]>(dataset);
+  const [classifyingId, setClassifyingId] = useState<string | null>(null);
+  const [quickSeq, setQuickSeq] = useState('');
+  const [quickResult, setQuickResult] = useState<string | null>(null);
+  const [isQuickPredicting, setIsQuickPredicting] = useState(false);
+
+  useEffect(() => {
+    setRecords(dataset);
+  }, [dataset]);
+
+  useEffect(() => {
+    const checkBackend = () => {
+      fetch('http://localhost:8000/api/health')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status === 'ok' && data.model_loaded) {
+            setBackendStatus('online');
+          } else {
+            setBackendStatus('offline');
+          }
+        })
+        .catch(() => setBackendStatus('offline'));
+    };
+
+    checkBackend();
+    const interval = setInterval(checkBackend, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleClassifyRow = async (id: string, seq: string) => {
+    setClassifyingId(id);
+    try {
+      const res = await fetch('http://localhost:8000/api/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sequence: seq }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRecords((prev) =>
+          prev.map((r) =>
+            r.id === id
+              ? {
+                  ...r,
+                  status:
+                    data.status === 'success'
+                      ? `${data.prediction} (${data.confidence}% • ${data.group})`
+                      : `Below threshold (${data.confidence}%)`,
+                }
+              : r
+          )
+        );
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setClassifyingId(null);
+    }
+  };
+
+  const handleQuickPredict = async () => {
+    const clean = quickSeq.replace(/[^ATCGNatcgn]/g, '').toUpperCase();
+    if (clean.length < 50) {
+      setQuickResult('Error: DNA sequence must be at least 50bp long.');
+      return;
+    }
+
+    setIsQuickPredicting(true);
+    setQuickResult(null);
+
+    try {
+      const res = await fetch('http://localhost:8000/api/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sequence: clean }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'success') {
+          setQuickResult(`Identified: ${data.prediction} (Confidence: ${data.confidence}%, Group: ${data.group})`);
+        } else {
+          setQuickResult(`Unknown Species / Low confidence (${data.confidence}%)`);
+        }
+      } else {
+        setQuickResult('Backend prediction returned error.');
+      }
+    } catch (err) {
+      setQuickResult('Could not reach backend API at http://localhost:8000');
+    } finally {
+      setIsQuickPredicting(false);
+    }
+  };
+
+  const filtered = records.filter(
+    (r) =>
+      r.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.seq.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const avgGC =
+    records.length > 0
+      ? (records.reduce((acc, r) => acc + r.gc, 0) / records.length).toFixed(1)
+      : '0';
+
+  const classifiedCount = records.filter(
+    (r) => !r.status.toLowerCase().includes('pending')
+  ).length;
+
   const pipelineSteps = [
     {
       num: '1',
@@ -52,7 +164,7 @@ export default function DashboardPage({ navigate, dataset }: Props) {
         <div className="flex flex-wrap items-center gap-3">
           {/* Download Sample Data Button */}
           <button
-            onClick={() => exportBulkToCSV(dataset)}
+            onClick={() => exportBulkToCSV(records)}
             className="btn-gov-outline flex items-center gap-2 text-xs"
             title="Download full dataset as CSV"
           >
@@ -70,6 +182,162 @@ export default function DashboardPage({ navigate, dataset }: Props) {
           </button>
         </div>
       </div>
+
+      {/* Metrics Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="gov-card p-4 border-t-2 border-t-[#2E7D32]">
+          <div className="text-xs text-[#666666] font-medium uppercase tracking-wider">Total Sample Reads</div>
+          <div className="text-2xl font-bold text-[#1B5E20] mt-1">{records.length}</div>
+          <div className="text-[11px] text-[#888888] mt-0.5">Active sequences in database</div>
+        </div>
+
+        <div className="gov-card p-4 border-t-2 border-t-[#1976D2]">
+          <div className="text-xs text-[#666666] font-medium uppercase tracking-wider">Mean GC Content</div>
+          <div className="text-2xl font-bold text-[#0D47A1] mt-1">{avgGC}%</div>
+          <div className="text-[11px] text-[#888888] mt-0.5">Nucleotide base ratio</div>
+        </div>
+
+        <div className="gov-card p-4 border-t-2 border-t-[#7B1FA2]">
+          <div className="text-xs text-[#666666] font-medium uppercase tracking-wider">Classified Reads</div>
+          <div className="text-2xl font-bold text-[#4A148C] mt-1">{classifiedCount} / {records.length}</div>
+          <div className="text-[11px] text-[#888888] mt-0.5">Taxonomy assigned reads</div>
+        </div>
+
+        <div className="gov-card p-4 border-t-2 border-t-[#388E3C]">
+          <div className="text-xs text-[#666666] font-medium uppercase tracking-wider">ML Backend Service</div>
+          <div className="flex items-center gap-2 mt-1">
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${
+                backendStatus === 'online'
+                  ? 'bg-[#2E7D32] animate-pulse'
+                  : backendStatus === 'offline'
+                  ? 'bg-[#C62828]'
+                  : 'bg-[#F57C00]'
+              }`}
+            />
+            <span className="text-sm font-bold text-[#222222]">
+              {backendStatus === 'online' ? 'Online (ML Loaded)' : backendStatus === 'offline' ? 'Offline' : 'Checking...'}
+            </span>
+          </div>
+          <div className="text-[11px] text-[#888888] mt-0.5">FastAPI :8000 Model Pipeline</div>
+        </div>
+      </div>
+
+      {/* Real-time Quick Sequence Predictor */}
+      <section className="gov-card p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-[#D7D6D0] pb-3">
+          <div>
+            <h2 className="text-base font-bold text-[#1B5E20] flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#2E7D32]" />
+              <span>Instant Sequence Classifier</span>
+            </h2>
+            <p className="text-xs text-[#555555]">
+              Test any environmental DNA sequence against the 20-species LightGBM trained model.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            placeholder="Paste raw nucleotide sequence (min 50bp, e.g., TCTCTACTTAATTTTCGGTGCATGAGCTGGA...)"
+            value={quickSeq}
+            onChange={(e) => setQuickSeq(e.target.value)}
+            className="flex-1 px-3 py-2 text-xs font-mono rounded-sm border border-[#D7D6D0] bg-white text-[#222222] focus:outline-none focus:border-[#2E7D32]"
+          />
+          <button
+            onClick={handleQuickPredict}
+            disabled={isQuickPredicting || quickSeq.trim().length === 0}
+            className="btn-gov-primary text-xs flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {isQuickPredicting ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span>Classifying...</span>
+              </>
+            ) : (
+              <>
+                <Microscope className="w-3.5 h-3.5" />
+                <span>Classify Sequence</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {quickResult && (
+          <div className="p-3 bg-[#E8F5E9] border border-[#A5D6A7] text-[#1B5E20] text-xs rounded-sm font-semibold">
+            {quickResult}
+          </div>
+        )}
+      </section>
+
+      {/* Dataset Reads Table */}
+      <section className="gov-card p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#D7D6D0] pb-3">
+          <div>
+            <h2 className="text-base font-bold text-[#1B5E20]">Sequence Reads Registry</h2>
+            <p className="text-xs text-[#555555]">
+              Showing {filtered.length} of {records.length} sequences
+            </p>
+          </div>
+
+          <div className="relative w-full sm:w-72">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#777777]" />
+            <input
+              type="text"
+              placeholder="Search by ID or species status..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-sm border border-[#D7D6D0] bg-white text-[#222222] focus:outline-none focus:border-[#2E7D32]"
+            />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto border border-[#D7D6D0] rounded-sm max-h-96">
+          <table className="gov-table text-xs">
+            <thead>
+              <tr>
+                <th>Read ID</th>
+                <th>Length</th>
+                <th>GC %</th>
+                <th>Classification Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.slice(0, 50).map((row) => (
+                <tr key={row.id}>
+                  <td className="font-mono font-bold text-[#2E7D32]">{row.id}</td>
+                  <td>{row.len} bp</td>
+                  <td className="font-mono">{row.gc}%</td>
+                  <td>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-xs text-[11px] font-semibold ${
+                        row.status.toLowerCase().includes('pending')
+                          ? 'bg-[#FFF3E0] text-[#E65100]'
+                          : row.status.toLowerCase().includes('invasive')
+                          ? 'bg-[#FFEBEE] text-[#C62828]'
+                          : 'bg-[#E8F5E9] text-[#1B5E20]'
+                      }`}
+                    >
+                      {row.status}
+                    </span>
+                  </td>
+                  <td>
+                    <button
+                      onClick={() => handleClassifyRow(row.id, row.seq)}
+                      disabled={classifyingId === row.id}
+                      className="px-2 py-1 text-[11px] font-bold text-[#2E7D32] bg-[#E8F5E9] hover:bg-[#C8E6C9] rounded-xs border border-[#A5D6A7] cursor-pointer disabled:opacity-50"
+                    >
+                      {classifyingId === row.id ? 'Running AI...' : 'Predict Species'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       {/* Simple Pipeline Process Section */}
       <section className="gov-card p-8 space-y-6">

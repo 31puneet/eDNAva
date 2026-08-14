@@ -5,3 +5,6 @@ lightgbm
 scikit-learn
 scipy
 biopython
+python-multipart
+joblib
+numpy
