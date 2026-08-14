@@ -210,10 +210,6 @@ export default function App() {
           <p className="text-xs text-[#C8E6C9] leading-relaxed max-w-xl">
             An original web platform built for environmental DNA sequence validation, automated quality control metrics, and standardized taxonomy classification services.
           </p>
-
-          <div className="pt-4 border-t border-[#1B5E20] text-xs text-[#C8E6C9]">
-            © 2025-2026 eDNA BioTrack. All Rights Reserved.
-          </div>
         </div>
       </footer>
     </div>
