@@ -1,4 +1,4 @@
-import { Leaf, ShieldCheck, Microscope, HelpCircle, Mail, Phone, MapPin, Award, ArrowRight } from 'lucide-react';
+import { Leaf, Award } from 'lucide-react';
 import { type Page } from '../App';
 
 interface Props {
@@ -87,69 +87,6 @@ export default function AboutPage({ navigate }: Props) {
             <p className="text-xs text-[#555555] leading-relaxed">
               Enables standard biodiversity accounting across river basins, national forest reserves, and coastal marine sanctuaries.
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* "HOW" Section */}
-      <section className="gov-card p-6 md:p-8 space-y-4">
-        <div className="border-b border-[#D7D6D0] pb-3">
-          <h2 className="text-lg font-bold text-[#1B5E20] flex items-center gap-2">
-            <Microscope className="w-5 h-5 text-[#2E7D32]" />
-            <span>3. Technical Pipeline Overview & Project Status</span>
-          </h2>
-        </div>
-
-        <div className="space-y-3 text-xs text-[#333333]">
-          <div className="p-3 bg-[#FAF9F5] border border-[#E0E0E0] rounded-sm flex items-start gap-3">
-            <span className="font-bold text-[#1B5E20] w-28 shrink-0">Stage 1: Upload</span>
-            <p>Users submit raw sequence datasets (`read_id` and `dna_sequence`) in CSV or FASTA format.</p>
-          </div>
-          <div className="p-3 bg-[#FAF9F5] border border-[#E0E0E0] rounded-sm flex items-start gap-3">
-            <span className="font-bold text-[#1B5E20] w-28 shrink-0">Stage 2: QC Metrics</span>
-            <p>Live client-side computation of sequence read lengths (bp) and GC content ratios (%).</p>
-          </div>
-          <div className="p-3 bg-[#FAF9F5] border border-[#E0E0E0] rounded-sm flex items-start gap-3">
-            <span className="font-bold text-[#1B5E20] w-28 shrink-0">Stage 3: AI Classifier</span>
-            <p>Neural network classification engine integration in progress (currently in pending status mode).</p>
-          </div>
-          <div className="p-3 bg-[#FAF9F5] border border-[#E0E0E0] rounded-sm flex items-start gap-3">
-            <span className="font-bold text-[#1B5E20] w-28 shrink-0">Stage 4: Exports</span>
-            <p>Single and bulk client-side CSV/JSON report downloads for research filings.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Official Helpdesk & Contact Section */}
-      <section className="gov-card p-6 md:p-8 space-y-4 bg-[#FAF9F5]">
-        <div className="border-b border-[#D7D6D0] pb-3">
-          <h2 className="text-base font-bold text-[#1B5E20]">Contact & Project Information</h2>
-          <p className="text-xs text-[#555555]">Smart India Hackathon 2025 platform inquiries and support contacts.</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-[#333333]">
-          <div className="p-3 bg-white border border-[#D7D6D0] rounded-sm flex items-center gap-3">
-            <Mail className="w-4 h-4 text-[#2E7D32]" />
-            <div>
-              <div className="font-bold">Project Inquiry</div>
-              <div className="text-[#666666]">sih2025-biotrack@portal.gov.in</div>
-            </div>
-          </div>
-
-          <div className="p-3 bg-white border border-[#D7D6D0] rounded-sm flex items-center gap-3">
-            <Phone className="w-4 h-4 text-[#2E7D32]" />
-            <div>
-              <div className="font-bold">SIH Support Team</div>
-              <div className="text-[#666666]">Smart India Hackathon 2025</div>
-            </div>
-          </div>
-
-          <div className="p-3 bg-white border border-[#D7D6D0] rounded-sm flex items-center gap-3">
-            <MapPin className="w-4 h-4 text-[#2E7D32]" />
-            <div>
-              <div className="font-bold">Development Node</div>
-              <div className="text-[#666666]">SIH 2025 Innovation Hub</div>
-            </div>
           </div>
         </div>
       </section>
