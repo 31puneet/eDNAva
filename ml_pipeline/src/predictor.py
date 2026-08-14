@@ -2,11 +2,14 @@ import os
 import sys
 import joblib
 import numpy as np
+import lightgbm as lgb
 from sklearn.feature_extraction import FeatureHasher
 from sklearn.preprocessing import normalize
 from typing import Dict, Any
 import random
 from Bio import SeqIO
+
+lgb.register_logger(lambda x: None)
 
 _MODEL = None
 _LABEL_ENCODER = None
@@ -34,43 +37,68 @@ def load_resources():
     _MODEL = joblib.load(model_path)
     _LABEL_ENCODER = joblib.load(encoder_path)
     
-    # Initialize the exact same hasher used in training
+    try:
+        _MODEL.set_params(verbose=-1)
+    except:
+        pass
+    
     _HASHER = FeatureHasher(n_features=2**20, input_type="string", alternate_sign=False)
 
 def predict_sequence(sequence: str, threshold: float = 0.70) -> Dict[str, Any]:
     """
-    Predicts the taxonomy of a single DNA sequence.
-    If the maximum probability is below 70%, returns 'Unknown Species'.
+    Predicts the taxonomy of a single DNA sequence safely.
+    Includes strict validation and a try/except safety net to prevent pipeline crashes.
     """
-    load_resources()
-    
-    sequence = sequence.strip().upper()
-    
-    # Preprocess: extract k-mers, hash, normalize
-    kmers_gen = _extract_kmers(sequence)
-    X_sparse = _HASHER.transform([kmers_gen])
-    X_normalized = normalize(X_sparse, norm='l1')
-    
-    probabilities = _MODEL.predict_proba(X_normalized)[0]
-    
-    max_prob_index = np.argmax(probabilities)
-    max_prob = probabilities[max_prob_index]
-   
-    if max_prob < threshold:
+    try:
+        load_resources()
+        
+        if not isinstance(sequence, str):
+            return {"prediction": "Invalid Data Type", "confidence": 0.0, "status": "error"}
+            
+        sequence = sequence.strip().upper()
+        
+        # 1. Validation: Sequence too short to form a 12-mer
+        if len(sequence) < 12:
+            return {"prediction": "Sequence Too Short", "confidence": 0.0, "status": "error"}
+        
+        kmers_gen = _extract_kmers(sequence)
+        X_sparse = _HASHER.transform([kmers_gen])
+        
+        # 2. Validation: Empty sequence after hashing
+        if X_sparse.nnz == 0:
+            return {"prediction": "Invalid Sequence", "confidence": 0.0, "status": "error"}
+            
+        X_normalized = normalize(X_sparse, norm='l1')
+        
+        probabilities = _MODEL.predict_proba(X_normalized)[0]
+        
+        max_prob_index = np.argmax(probabilities)
+        max_prob = probabilities[max_prob_index]
+       
+        # 3. Confidence Thresholding
+        if max_prob < threshold:
+            return {
+                "prediction": "Unknown Species",
+                "confidence": round(float(max_prob) * 100, 2),
+                "status": "below_threshold"
+            }
+            
+        predicted = _MODEL.classes_[max_prob_index]
+        predicted_class = _LABEL_ENCODER.inverse_transform([predicted])[0]
+        
         return {
-            "prediction": "Unknown Species",
+            "prediction": predicted_class,
             "confidence": round(float(max_prob) * 100, 2),
-            "status": "below_threshold"
+            "status": "success"
         }
         
-    predicted = _MODEL.classes_[max_prob_index]
-    predicted_class = _LABEL_ENCODER.inverse_transform([predicted])[0]
-    
-    return {
-        "prediction": predicted_class,
-        "confidence": round(float(max_prob) * 100, 2),
-        "status": "success"
-    }
+    except Exception as e:
+        return {
+            "prediction": "Processing Error",
+            "confidence": 0.0,
+            "status": "error",
+            "error_message": str(e)
+        }
 
 if __name__ == "__main__":
     print("Testing Predictor Module with REAL data...")
