@@ -1,5 +1,6 @@
 import os
 import random
+import time
 from typing import List
 from Bio import Entrez, SeqIO
 from Bio.Seq import Seq
@@ -33,7 +34,7 @@ def fetch_genomes(species_name: str, max_records: int = 2) -> List[str]:
         handle.close()
 
         if not record["IdList"]:
-            return [_generate_fallback_sequence(), _generate_fallback_sequence()]
+            raise RuntimeError(f"Error: No genomes found on NCBI for {species_name}.")
 
         seq_ids = record["IdList"]
         fetch_handle = Entrez.efetch(db="nucleotide", id=",".join(seq_ids), rettype="fasta", retmode="text")
@@ -44,15 +45,14 @@ def fetch_genomes(species_name: str, max_records: int = 2) -> List[str]:
         sequences = [str(r.seq) for r in records if len(str(r.seq)) >= 200]
         
         # Ensure we always have exactly 2 distinct records for strict Train/Test isolation
-        while len(sequences) < max_records:
-            sequences.append(_generate_fallback_sequence())
+        if len(sequences) < max_records:
+            raise RuntimeError(f"Error: Only {len(sequences)} real records found for {species_name}. Need {max_records}.")
             
         return sequences[:max_records]
     except Exception as e:
-        return [_generate_fallback_sequence(), _generate_fallback_sequence()]
-
-def _generate_fallback_sequence(length: int = 15000) -> str:
-    return "".join(random.choices(["A", "T", "C", "G"], k=length))
+        import sys
+        print(f"  Fatal Error fetching {species_name}: {e}. Stopping pipeline to prevent garbage data.")
+        sys.exit(1)
 
 def generate_fragments(sequence: str, species: str, group: str, split_tag: str, count: int, window_size: int = 200) -> List[SeqRecord]:
     fragments = []
@@ -86,6 +86,8 @@ def generate_fragments(sequence: str, species: str, group: str, split_tag: str, 
     return fragments
 
 def main():
+    random.seed(42)  # Ensure reproducible dataset generation
+    
     output_dir = os.path.join(os.path.dirname(__file__), "..", "data")
     os.makedirs(output_dir, exist_ok=True)
     output_file = os.path.join(output_dir, "lake_ecosystem.fasta")
@@ -96,6 +98,7 @@ def main():
     for group, species_list in SPECIES_MAP.items():
         for species in species_list:
             print(f"Fetching: {species} ({group})")
+            time.sleep(0.5)  # Respect NCBI 3 req/sec rate limit
             # Fetch 2 physically distinct genomes from NCBI
             genomes = fetch_genomes(species, max_records=2)
             

@@ -61,7 +61,8 @@ def predict_sequence(sequence: str, threshold: float = 0.70) -> Dict[str, Any]:
             "status": "below_threshold"
         }
         
-    predicted_class = _LABEL_ENCODER.inverse_transform([max_prob_index])[0]
+    predicted = _MODEL.classes_[max_prob_index]
+    predicted_class = _LABEL_ENCODER.inverse_transform([predicted])[0]
     
     return {
         "prediction": predicted_class,
