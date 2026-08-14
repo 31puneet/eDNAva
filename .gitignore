@@ -1,8 +1,14 @@
 venv/
 __pycache__/
+*.pyc
 node_modules/
+dist/
 .next/
 .env
+*.db
+*.sqlite3
+backend/data/*.db
 *.fasta
 *.npz
 *.npy
+

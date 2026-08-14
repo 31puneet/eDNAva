@@ -9,7 +9,13 @@ from typing import Dict, Any
 import random
 from Bio import SeqIO
 
-lgb.register_logger(lambda x: None)
+import logging
+_custom_logger = logging.getLogger("lightgbm_silent")
+_custom_logger.setLevel(logging.ERROR)
+try:
+    lgb.register_logger(_custom_logger)
+except Exception:
+    pass
 
 _MODEL = None
 _LABEL_ENCODER = None

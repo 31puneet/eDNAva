@@ -88,15 +88,49 @@ export default function UploadPage({ navigate, onAddReads }: Props) {
     reader.readAsText(selectedFile);
   };
 
-  const handleConfirmAnalysis = () => {
+  const handleConfirmAnalysis = async () => {
     if (parsedPreview.length === 0) return;
     setIsProcessing(true);
 
-    setTimeout(() => {
+    try {
+      // Run AI/ML classification on parsed reads via backend
+      const classifiedReads = await Promise.all(
+        parsedPreview.map(async (record) => {
+          try {
+            const res = await fetch('http://localhost:8000/api/predict', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sequence: record.seq }),
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.status === 'success') {
+                return {
+                  ...record,
+                  status: `${data.prediction} (${data.confidence}% • ${data.group})`,
+                };
+              } else {
+                return {
+                  ...record,
+                  status: `Below threshold (${data.confidence}%)`,
+                };
+              }
+            }
+          } catch (err) {
+            console.warn('Backend prediction error:', err);
+          }
+          return record;
+        })
+      );
+
+      onAddReads(classifiedReads);
+    } catch (e) {
+      console.error(e);
       onAddReads(parsedPreview);
+    } finally {
       setIsProcessing(false);
       navigate('dashboard');
-    }, 600);
+    }
   };
 
   return (
