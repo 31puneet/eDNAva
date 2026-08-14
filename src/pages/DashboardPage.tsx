@@ -1,326 +1,233 @@
-import { useState, useRef, DragEvent } from 'react'
+import { useState } from 'react';
+import { Search, Download, Plus, Filter, FileText, FileCode, CheckCircle2, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
+import { type Page } from '../App';
+import { SequenceRecord, exportSingleReadToCSV, exportSingleReadToJSON, exportBulkToCSV } from '../data/sequencesDataset';
 
-const ALL_SEQUENCES = [
-  { id: 'SEQ_0000', len: 202, gc: 48.5, seq: 'GGTACTGCCTTAAGACTTCTAATTCGCGCCGAATTAGGACAATCTGGAAGTCTAATTGGAGATGATCAGATCTACAATGTGATTGTTACGGCTCATGCGTTCGTAATAATTTTCTTCATAGTTATGCCAATCATGATTGGGGGATTTGGAAACTGACTAGTTCCTTAAATATTAGGGCCCCTGACATGGCTTTCCCTCGAC' },
-  { id: 'SEQ_0001', len: 198, gc: 46.2, seq: 'GTGGGGGGTGCTGTAGAAAGAGGTGCTGGCACAGGGTGAACTGTATACCCTCCTCTTTCTGCAGGAATTGCCCATGCGGGAGCATCTGTGGATCTTAGAATTTTTTCTTTACATCTTGCAGGAATTTCCCATGCGGGAGCATCTGTGGATCTTAGAATTTTTCTTTTACATCTTGCAGGAATTGCCCATGCG' },
-  { id: 'SEQ_0002', len: 195, gc: 47.1, seq: 'TGCCAATCATGTTGGGGGATTTGGAAACTGACTAGTTCCTTTAATATTAGGGCCCCTGACATGGCTTTCCCTCGACTTAATAATCTTAGATTCTGATTCTTACCCCCTGCATTAACTTTGCTCTTGGTGGGGGGTGCTGTAGAAAGAGGTGCTGGCACAGGGTGAACTGTATAC' },
-  { id: 'SEQ_0003', len: 201, gc: 49.0, seq: 'CTGCAGGAATTGCCCATGCGGGAGCATCTGTGGATCTTAGAATTTTTTCTTTACATCTTGCAGGAATCTCCTCTATTCTTGGAGCTGTGAACTTCATTACTACTATTATCAATATACGATCTTTGGGATAAGATTAGATCGTATCCCTTATTTGTCTGAGCAGTGGGTATCACCGCCTTACTTTTACTCCTTAGCCTC' },
-  { id: 'SEQ_0004', len: 199, gc: 45.8, seq: 'TTAGAATTTTTCTTTACATCTTGCAGGAATCTCCTCTATTCTTGGAGCTGTGAACTTCATTACTACTATTATCAATATACGATCTTTGGGATAAGATTAGATCGTATCCCTTATTTGTCTGAGCAGTGGGTATCACCGCCTTACTTTACTCCTTAGCCTC' },
-  { id: 'SEQ_0005', len: 203, gc: 47.8, seq: 'AGCATCTGTGGATCTTAGAATTTTTTTCTTTACATCTTGCAGGAATCTCCTCTATTCTTGGAGCTGTGAACTTCATTACTACTATTATCAATATACGATCTTTGGGATAAGATTAGATCGTATCCCTTATTTGTCTGAGCAGTGGGTATCACCGCCTTACT' },
-  { id: 'SEQ_0006', len: 196, gc: 48.2, seq: 'TTCTAATTCGCGCCGAATTAGGACAATCTGGAAGTCTAATTGGAGATGATCAGATCTACAATGTGATTGTTACGGCTCATGCGTTCGTAATAATTTTCTTCATAGTTATGCCAATCATGATTGGGGGATTTGGAAACTGACTAGTTCCTTAAATATTAGGGCCCCTGACATGGCTTTCCCTCGACTTAATAATCTTAG' },
-  { id: 'SEQ_0007', len: 198, gc: 46.6, seq: 'CTTTTTTTTTCTGTATTTGGTCAGGAATAGTAGGTACTGCCTTAAGACTTCTAATTCGCGCCGAATTAGGACAATCTGGAAGTCTAATTGGAGATGATCAGATCTACAATGTGATTGTTACGGCTCATGCGTTCGTAATAATTTTCTTCATAGTTATGCCAATCATGATTGGG' },
-  { id: 'SEQ_0008', len: 204, gc: 47.3, seq: 'GGTGAACTGTATACCCTCCTCTTTCTGCAGGAATTGCCCATGCGGGAGCATCTGTGGATCTTAGAATTTTTTCTTTACATCTTGCAGGAATCTCCTCTATTCTTGGAGCTGTGAACTTCATTACTACTATTATCAATATACGATCTTTGGGATAAGATTAGATCGTATCC' },
-  { id: 'SEQ_0009', len: 197, gc: 45.5, seq: 'ATTAACTTTGCTCTTGGTGGGGGGTGCTGTAGAAAGAGGTGCTGGCACAGGGTGAACTGTATACCCTCCTCTTTCTGCAGGAATTGCCCATGCGGGAGCATCTGTGGATCTTAGAATTTTTTCTTTACATCTTGCAGGAATCTCCTCTATTCTTGGAGCTGTGAACTTCATTAC' },
-  { id: 'SEQ_0010', len: 200, gc: 48.0, seq: 'CAATGTGATTGTTACGGCTCATGCGTTCGTAATAATTTTCTTCATAGTTATGCCAATCATGATTGGGGGATTTGGAAACTGACTAGTTCCTTAAATATTAGGGCCCCTGACATGGCTTTCCCTCGACTTAATAATCTTAGATTCTGATTCTTACCCCCTGCATTAACTTTGCTCTT' },
-  { id: 'SEQ_0011', len: 201, gc: 46.9, seq: 'AATCTGGAAGTCTAATTGGAGATGATCAGATCTACAATGTGATTGTTACGGCTCATGCGTTCGTAATAATTTTCTTCATAGTTATGCCAATCATGATTGGGGGATTTGGAAACTGACTAGTTCCTTAAATATTAGGGCCCCTGACATGGCTTTCCCTCGACTTAATAATCTTAGAT' },
-  { id: 'SEQ_0012', len: 198, gc: 47.5, seq: 'CCAATCATGATTGGGGGATTTGGAAACTGACTAGTTCCTTTAATATTAGGGCCCCTGACATGGCTTTCCCTCGACTTAATAATCTTAGATTCTGATTCTTACCCCCTGCATTAACTTTGCTCTTGGTGGGGGGTGCTGTAGAAAGAGGTGCTGGCACAGGGTGAACTGTATAC' },
-  { id: 'SEQ_0013', len: 202, gc: 48.8, seq: 'GAATAGTAGGTACTGCCTTAAGACTTCTAATTCGCGCCGAATTAGGACAATCTGGAAGTCTAATTGGAGATGATCAGATCTACAATGTGATTGTTACGGCTCATGCGTTCGTAATAATTTTCTTCATAGTTATGCCAATCATGATTGGGGGATTTGGAAACTGACTAGTTCCTTTAATATTAGGGCCCCTGACATGGCT' },
-  { id: 'SEQ_0014', len: 199, gc: 47.0, seq: 'GATTGTTACGGCTCATGCGTTCGTAATAATTTTCTTCATAGTTATGCCAATCATGATTGGGGGATTTGGAAACTGACTAGTTCCTTAAATATTAGGGCCCCTGACATGGCTTTCCCTCGACTTAATAATCTTAGATTCTGATTCTTACCCCCTGCATTAACTTTGCTCTTGGTGGGGGG' },
-  { id: 'SEQ_0015', len: 196, gc: 46.4, seq: 'TTTTTTCTGTATTTGGTCAGGAATAGTAGGTACTGCCTTAAGACTTCTAATTCGCGCCGAATTAGGACAATCTGGAAGTCTAATTGGAGATGATCAGATCTACAATGTGATTGTTACGGCTCATGCGTTCGTAATAATTTTCTTCATAGTTATGCCAATCATGATTGGGG' },
-  { id: 'SEQ_0016', len: 203, gc: 48.3, seq: 'GCACAGGGTGAACTGTATACCCTCCTCTTTCTGCAGGAATTGCCCATGCGGGAGCATCTGTGGATCTTAGAATTTTTTTCTTTACATCTTGCAGGAATCTCCTCTATTCTTGGAGCTGTGAACTTCATTACTACTATTATCAATATACGATCTTTGGGATAAGATTAGATCGTATCC' },
-  { id: 'SEQ_0017', len: 200, gc: 47.2, seq: 'CTGCCCTTAAGACTTCTAATTCGCGCCGAATTAGGACAATCTGGAAGTCTAATTGGAGATGATCAGATCTACAATGTGATTGTTACGGCTCATGCGTTCGTAATAATTTTCTTCATAGTTATGCCAATCATGATTGGGGGATTTGGAAACTGACTAGTTCCTTAAATATTAGGG' },
-  { id: 'SEQ_0018', len: 198, gc: 46.7, seq: 'TGAACTGTATACCCTCCTCTTTCTGCAGGAATTGCCCATGCGGGAGCATCTGTGGATCTTAGAATTTTTTTCTTTACATCTTGCAGGAATCTCCTCTATTCTTGGAGCTGTGAACTTCATTACTACTATTATCAATATACGATCTTTGGGATAAGATTAGATCGTATCCCTTATTTGTCT' },
-  { id: 'SEQ_0019', len: 201, gc: 47.9, seq: 'GTATTTGGTCAGGAATAGTAGGTACTGCCTTAAGACTTCTAATTCGCGCCGAATTAGGACAATCTGGAAGTCTAATTGGAGATGATCAGATCTACAATGTGATTGTTACGGCTCATGCGTTCGTAATAATTTTCTTCATAGTTATGCCAATCATGATTGGGGGATTTGGAAACTGACTAGTTCCT' },
-  { id: 'SEQ_0020', len: 199, gc: 48.1, seq: 'GTGCTGGCACAGGGTGAACTGTATACCCTCCTCTTTCTGCAGGAATTGCCCATGCGGGAGCATCTGTGGATCTTAGAATTTTTTTCTTTACATCTTGCAGGAATCTCCTCTATTCTTGGAGCTGTGAACTTCATTACTACTATTATCAATATACGATCTTTGGGATAAGATTAGATCGTAT' },
-  { id: 'SEQ_0021', len: 197, gc: 46.3, seq: 'CCGAATTAGGACAATCTGGAAGTCTAATTGGAGATGATCAGATCTACAATGTGATTGTTACGGCTCATGCGTTCGTAATAATTTTCTTCATAGTTATGCCAATCATGATTGGGGGATTTGGAAACTGACTAGTTCCTTAAATATTAGGGCCCCTGACATGGCTTTCCCTCGAC' },
-  { id: 'SEQ_0022', len: 202, gc: 47.6, seq: 'CTTTCTGCAGGAATTGCCCATGCGGGAGCATCTGTGGATCTTAGAATTTTTTTCTTTACATCTTGCAGGAATCTCCTCTATTCTTGGAGCTGTGAACTTCATTACTACTATTATCAATATACGATCTTTGGGATAAGATTAGATCGTATCCCTTATTTGTCTGAGCAGTGGGTATCACCGCCT' },
-  { id: 'SEQ_0023', len: 200, gc: 47.8, seq: 'ATCAGATCTACAATGTGATTGTTACGGCTCATGCGTTCGTAATAATTTTCTTCATAGTTATGCCAATCATGATTGGGGGATTTGGAAACTGACTAGTTCCTTAAATATTAGGGCCCCTGACATGGCTTTCCCTCGACTTAATAATCTTAGATTCTGATTCTTACCCCCTGCATTAACTTTGCTCT' },
-  { id: 'SEQ_0024', len: 196, gc: 46.8, seq: 'AGAGGTGCTGGCACAGGGTGAACTGTATACCCTCCTCTTTCTGCAGGAATTGCCCATGCGGGAGCATCTGTGGATCTTAGAATTTTTTTCTTTACATCTTGCAGGAATCTCCTCTATTCTTGGAGCTGTGAACTTCATTACTACTATTATCAATATACGATCTTTGGGATAAGATT' },
-  { id: 'SEQ_0025', len: 203, gc: 48.4, seq: 'ACTTCTAATTCGCGCCGAATTAGGACAATCTGGAAGTCTAATTGGAGATGATCAGATCTACAATGTGATTGTTACGGCTCATGCGTTCGTAATAATTTTCTTCATAGTTATGCCAATCATGATTGGGGGATTTGGAAACTGACTAGTTCCTTAAATATTAGGGCCCCTGACATGGCTTTCC' },
-  { id: 'SEQ_0026', len: 198, gc: 46.5, seq: 'GTTCGTAATAATTTTCTTCATAGTTATGCCAATCATGATTGGGGGATTTGGAAACTGACTAGTTCCTTTAATATTAGGGCCCCTGACATGGCTTTCCCTCGACTTAATAATCTTAGATTCTGATTCTTACCCCCTGCATTAACTTTGCTCTTGGTGGGGGGTGCTGTAGAAAGAGGTGCTGGCACAGG' },
-  { id: 'SEQ_0027', len: 200, gc: 47.0, seq: 'GATTTGGAAACTGACTAGTTCCTTTAATATTAGGGCCCCTGACATGGCTTTCCCTCGACTTAATAATCTTAGATTCTGATTCTTACCCCCTGCATTAACTTTGCTCTTGGTGGGGGGTGCTGTAGAAAGAGGTGCTGGCACAGGGTGAACTGTATACCCTCCTCTTTCTGCAGG' },
-  { id: 'SEQ_0028', len: 202, gc: 47.7, seq: 'CCCCTGACATGGCTTTCCCTCGACTTAATAATCTTAGATTCTGATTCTTACCCCCTGCATTAACTTTGCTCTTGGTGGGGGGTGCTGTAGAAAGAGGTGCTGGCACAGGGTGAACTGTATACCCTCCTCTTTCTGCAGGAATTGCCCATGCGGGAGCATCTGTGGATCTTAGAATTTTTTT' },
-]
+interface Props {
+  navigate: (page: Page) => void;
+  dataset: SequenceRecord[];
+}
 
-type FileType = 'CSV' | 'FASTA' | 'FASTQ' | null
+export default function DashboardPage({ navigate, dataset }: Props) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [minLenFilter, setMinLenFilter] = useState<number>(0);
+  const [page, setPage] = useState(0);
+  const PER_PAGE = 15;
 
-export default function DashboardPage() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterStatus, setFilterStatus] = useState('all')
-  const [dragging, setDragging] = useState(false)
-  const [uploadedFiles, setUploadedFiles] = useState<{ name: string; type: FileType; size: string }[]>([])
-  const [expandedSeq, setExpandedSeq] = useState<string | null>(null)
-  const [page, setPage] = useState(0)
-  const fileRef = useRef<HTMLInputElement>(null)
-  const PER_PAGE = 10
+  // Filter dataset dynamically based on search query & length range
+  const filteredRecords = dataset.filter((record) => {
+    const matchesSearch =
+      record.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.seq.toLowerCase().includes(searchTerm.toLowerCase());
 
-  const filtered = ALL_SEQUENCES.filter(s => {
-    const q = searchQuery.toLowerCase()
-    return s.id.toLowerCase().includes(q) || s.seq.toLowerCase().includes(q)
-  })
-  const paginated = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE)
-  const totalPages = Math.ceil(filtered.length / PER_PAGE)
+    const matchesLen = record.len >= minLenFilter;
 
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setDragging(false)
-    const files = Array.from(e.dataTransfer.files)
-    processFiles(files)
-  }
+    return matchesSearch && matchesLen;
+  });
 
-  const processFiles = (files: File[]) => {
-    const newFiles = files.map(f => {
-      let type: FileType = null
-      if (f.name.endsWith('.csv')) type = 'CSV'
-      else if (f.name.endsWith('.fasta') || f.name.endsWith('.fa')) type = 'FASTA'
-      else if (f.name.endsWith('.fastq') || f.name.endsWith('.fq')) type = 'FASTQ'
-      const size = f.size > 1024 * 1024 ? `${(f.size / 1024 / 1024).toFixed(1)} MB` : `${(f.size / 1024).toFixed(0)} KB`
-      return { name: f.name, type, size }
-    })
-    setUploadedFiles(prev => [...newFiles, ...prev])
-  }
-
-  const gcColor = (gc: number) => {
-    if (gc < 45) return '#d4a843'
-    if (gc > 52) return '#e07060'
-    return '#14b8a6'
-  }
+  const paginatedRecords = filteredRecords.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
+  const totalPages = Math.ceil(filteredRecords.length / PER_PAGE);
 
   return (
-    <div style={{ maxWidth: 1280, margin: '0 auto', padding: '48px 24px' }}>
-      {/* Page header */}
-      <div style={{ marginBottom: 40 }}>
-        <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#14b8a6', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>
-          Data Section
+    <div className="space-y-8 pb-12">
+      {/* Header Bar */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[#D7D6D0] pb-4">
+        <div>
+          <div className="text-xs font-bold text-[#2E7D32] uppercase tracking-wider mb-1">
+            Official Data Portal Console
+          </div>
+          <h1 className="text-2xl font-extrabold text-[#1B5E20]">eDNA Sequence Reads & Quality Summary</h1>
+          <p className="text-xs text-[#555555]">
+            Listing {filteredRecords.length} of {dataset.length} total sequence records. All metrics computed live from the raw CSV dataset.
+          </p>
         </div>
-        <h1 style={{ fontFamily: 'Fraunces, serif', fontSize: 40, fontWeight: 400, color: '#dde9f8', margin: '0 0 10px' }}>
-          Sequence Dashboard
-        </h1>
-        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 15, color: '#7a98b8', margin: 0 }}>
-          Search the barcode database, upload new sequence files, and explore individual records.
-        </p>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Bulk CSV Export Button */}
+          <button
+            onClick={() => exportBulkToCSV(filteredRecords)}
+            className="btn-gov-outline flex items-center gap-2 text-xs"
+            title="Download visible records as CSV"
+          >
+            <Download className="w-4 h-4" />
+            <span>Bulk Export CSV ({filteredRecords.length})</span>
+          </button>
+
+          {/* Upload New Sample Button -> Routes to /dashboard/upload */}
+          <button
+            onClick={() => navigate('upload')}
+            className="btn-gov-primary flex items-center gap-2 text-xs"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Upload New Sample File</span>
+          </button>
+        </div>
       </div>
 
-      {/* Upload zone */}
-      <div style={{ marginBottom: 40, background: '#0b1a2e', borderRadius: 14, padding: 28, border: '1px solid rgba(255,255,255,0.07)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h2 style={{ fontFamily: 'Fraunces, serif', fontSize: 20, fontWeight: 600, color: '#dde9f8', margin: 0 }}>
-            Upload Sequence Files
-          </h2>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {(['CSV', 'FASTA', 'FASTQ'] as const).map(fmt => (
-              <span key={fmt} className="badge" style={{ background: 'rgba(20,184,166,0.1)', color: '#14b8a6', border: '1px solid rgba(20,184,166,0.2)' }}>
-                .{fmt.toLowerCase()}
-              </span>
-            ))}
+      {/* Dataset Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="gov-card p-4">
+          <div className="text-xs text-[#666666] font-medium uppercase">Active Records</div>
+          <div className="text-2xl font-extrabold text-[#1B5E20]">{dataset.length} Reads</div>
+          <div className="text-xs text-[#555555]">Dataset: SEQ_0000 - SEQ_0199</div>
+        </div>
+
+        <div className="gov-card p-4">
+          <div className="text-xs text-[#666666] font-medium uppercase">Avg Read Length</div>
+          <div className="text-2xl font-extrabold text-[#1B5E20]">
+            {(dataset.reduce((a, b) => a + b.len, 0) / dataset.length).toFixed(1)} bp
+          </div>
+          <div className="text-xs text-[#555555]">Range: 198 bp - 208 bp</div>
+        </div>
+
+        <div className="gov-card p-4">
+          <div className="text-xs text-[#666666] font-medium uppercase">Avg GC Content</div>
+          <div className="text-2xl font-extrabold text-[#1B5E20]">
+            {(dataset.reduce((a, b) => a + b.gc, 0) / dataset.length).toFixed(1)}%
+          </div>
+          <div className="text-xs text-[#555555]">Computed from (G+C)/Total</div>
+        </div>
+      </div>
+
+      {/* Search & Filter Toolbar */}
+      <div className="gov-card p-4 space-y-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          {/* Search Bar */}
+          <div className="relative w-full sm:w-80">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#777777]" />
+            <input
+              type="text"
+              placeholder="Search read_id (e.g. SEQ_0045)..."
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-sm border border-[#D7D6D0] bg-white text-[#222222] focus:outline-none focus:border-[#2E7D32]"
+            />
+          </div>
+
+          {/* Min Length Filter */}
+          <div className="flex items-center gap-2 text-xs text-[#555555]">
+            <Filter className="w-4 h-4 text-[#2E7D32]" />
+            <span className="font-semibold text-[#222222]">Min Length:</span>
+            <select
+              value={minLenFilter}
+              onChange={(e) => { setMinLenFilter(Number(e.target.value)); setPage(0); }}
+              className="px-2 py-1.5 rounded-sm border border-[#D7D6D0] bg-white text-xs text-[#222222] focus:outline-none"
+            >
+              <option value={0}>All Lengths</option>
+              <option value={200}>&gt;= 200 bp</option>
+              <option value={203}>&gt;= 203 bp</option>
+              <option value={205}>&gt;= 205 bp</option>
+            </select>
           </div>
         </div>
 
-        <div
-          className={`upload-zone${dragging ? ' dragging' : ''}`}
-          style={{ padding: '48px 24px', textAlign: 'center' }}
-          onDragOver={e => { e.preventDefault(); setDragging(true) }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={handleDrop}
-          onClick={() => fileRef.current?.click()}
-        >
-          <input
-            ref={fileRef}
-            type="file"
-            multiple
-            accept=".csv,.fasta,.fa,.fastq,.fq"
-            style={{ display: 'none' }}
-            onChange={e => processFiles(Array.from(e.target.files || []))}
-          />
-          <div style={{ marginBottom: 16 }}>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.5 }}>
-              <path d="M12 3v13m0-13L8 7m4-4l4 4" stroke="#14b8a6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="#14b8a6" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-          </div>
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 15, color: '#7a98b8', margin: '0 0 6px' }}>
-            Drag & drop your files here, or <span style={{ color: '#14b8a6', textDecoration: 'underline' }}>browse</span>
-          </p>
-          <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#3a5577', margin: 0 }}>
-            Accepts .csv · .fasta / .fa · .fastq / .fq
-          </p>
+        {/* Reads Table */}
+        <div className="overflow-x-auto border border-[#D7D6D0] rounded-sm">
+          <table className="gov-table">
+            <thead>
+              <tr>
+                <th>Read ID</th>
+                <th>Sequence Length</th>
+                <th>GC Content %</th>
+                <th>Classification Status</th>
+                <th>DNA Sequence Read Preview</th>
+                <th className="text-right">Export Read</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRecords.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-[#666666]">
+                    <div className="flex flex-col items-center gap-2">
+                      <AlertCircle className="w-6 h-6 text-[#888888]" />
+                      <span>No matching sequence reads found.</span>
+                      <button
+                        onClick={() => { setSearchTerm(''); setMinLenFilter(0); }}
+                        className="text-xs text-[#2E7D32] underline font-semibold cursor-pointer"
+                      >
+                        Reset filters
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                paginatedRecords.map((record) => (
+                  <tr key={record.id}>
+                    {/* Read ID */}
+                    <td className="font-mono font-bold text-[#1B5E20]">{record.id}</td>
+
+                    {/* Sequence Length */}
+                    <td>{record.len} bp</td>
+
+                    {/* GC Content */}
+                    <td className="font-mono text-[#2E7D32] font-semibold">{record.gc}%</td>
+
+                    {/* Classification Status (Honest placeholder) */}
+                    <td>
+                      <span className="status-badge-pending">
+                        {record.status}
+                      </span>
+                    </td>
+
+                    {/* Sequence Snippet */}
+                    <td>
+                      <span className="dna-seq-box max-w-[260px] inline-block truncate" title={record.seq}>
+                        {record.seq.slice(0, 50)}...
+                      </span>
+                    </td>
+
+                    {/* Export Actions */}
+                    <td className="text-right">
+                      <div className="inline-flex items-center gap-1">
+                        <button
+                          onClick={() => exportSingleReadToCSV(record)}
+                          className="px-2.5 py-1 rounded-sm bg-[#E8F5E9] hover:bg-[#C8E6C9] text-[#1B5E20] text-xs font-semibold border border-[#A5D6A7] cursor-pointer"
+                          title="Export single read as CSV"
+                        >
+                          CSV
+                        </button>
+                        <button
+                          onClick={() => exportSingleReadToJSON(record)}
+                          className="px-2.5 py-1 rounded-sm bg-[#F5F5F5] hover:bg-[#E0E0E0] text-[#424242] text-xs font-semibold border border-[#BDBDBD] cursor-pointer"
+                          title="Export single read as JSON"
+                        >
+                          JSON
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
 
-        {uploadedFiles.length > 0 && (
-          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#3a5577', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 4 }}>
-              Queued Files
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-2 text-xs text-[#555555]">
+            <div>
+              Showing Page <span className="font-bold text-[#222222]">{page + 1}</span> of{' '}
+              <span className="font-bold text-[#222222]">{totalPages}</span> ({filteredRecords.length} records)
             </div>
-            {uploadedFiles.map((f, i) => (
-              <div key={i} style={{
-                display: 'flex', alignItems: 'center', gap: 14, padding: '10px 14px',
-                background: '#102038', borderRadius: 8, border: '1px solid rgba(255,255,255,0.05)',
-              }}>
-                <span className="badge" style={{ background: 'rgba(20,184,166,0.15)', color: '#14b8a6', border: '1px solid rgba(20,184,166,0.25)', minWidth: 52 }}>
-                  {f.type || '???'}
-                </span>
-                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: '#dde9f8', flex: 1 }}>{f.name}</span>
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#3a5577' }}>{f.size}</span>
-                <span className="badge" style={{ background: 'rgba(20,184,166,0.1)', color: '#14b8a6' }}>Ready</span>
-                <button
-                  onClick={() => setUploadedFiles(prev => prev.filter((_, j) => j !== i))}
-                  style={{ background: 'none', border: 'none', color: '#3a5577', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 2px' }}
-                >×</button>
-              </div>
-            ))}
-            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-              <button className="btn-primary">Process All Files</button>
-              <button className="btn-outline" onClick={() => setUploadedFiles([])}>Clear Queue</button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="px-3 py-1 border border-[#D7D6D0] bg-white rounded-sm disabled:opacity-40 cursor-pointer"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                className="px-3 py-1 border border-[#D7D6D0] bg-white rounded-sm disabled:opacity-40 cursor-pointer"
+              >
+                Next
+              </button>
             </div>
           </div>
         )}
       </div>
-
-      {/* Search + Filter */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 260, position: 'relative' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#3a5577' }}>
-            <circle cx="11" cy="11" r="7" stroke="#3a5577" strokeWidth="2"/>
-            <path d="M20 20l-3-3" stroke="#3a5577" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-          <input
-            placeholder="Search by read ID or sequence…"
-            value={searchQuery}
-            onChange={e => { setSearchQuery(e.target.value); setPage(0) }}
-            style={{ paddingLeft: 40 }}
-          />
-        </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ width: 160 }}>
-          <option value="all">All Records</option>
-          <option value="processed">Processed</option>
-          <option value="pending">Pending</option>
-        </select>
-        <button className="btn-outline">
-          Export CSV
-        </button>
-      </div>
-
-      {/* Table */}
-      <div style={{ background: '#0b1a2e', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
-        {/* Table header */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: '140px 80px 80px 70px 1fr 40px',
-          padding: '12px 20px',
-          background: '#102038',
-          borderBottom: '1px solid rgba(255,255,255,0.07)',
-          fontFamily: 'Inter, sans-serif', fontSize: 11, fontWeight: 600,
-          color: '#3a5577', letterSpacing: '0.07em', textTransform: 'uppercase',
-        }}>
-          <span>Read ID</span>
-          <span>Length</span>
-          <span>GC %</span>
-          <span>Region</span>
-          <span>Sequence</span>
-          <span></span>
-        </div>
-
-        {paginated.map((seq, i) => (
-          <div key={seq.id}>
-            <div
-              className="seq-row"
-              style={{
-                display: 'grid', gridTemplateColumns: '140px 80px 80px 70px 1fr 40px',
-                padding: '13px 20px',
-                borderBottom: '1px solid rgba(255,255,255,0.04)',
-                alignItems: 'center',
-                cursor: 'pointer',
-              }}
-              onClick={() => setExpandedSeq(expandedSeq === seq.id ? null : seq.id)}
-            >
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: '#14b8a6' }}>{seq.id}</span>
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: '#7a98b8' }}>{seq.len} bp</span>
-              <span>
-                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: gcColor(seq.gc) }}>
-                  {seq.gc.toFixed(1)}%
-                </span>
-              </span>
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#d4a843' }}>COI</span>
-              <span className="dna-chip" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: 0.55 }}>
-                {seq.seq.slice(0, 80)}…
-              </span>
-              <span style={{ color: '#3a5577', fontSize: 18, textAlign: 'center', userSelect: 'none' }}>
-                {expandedSeq === seq.id ? '▾' : '▸'}
-              </span>
-            </div>
-            {expandedSeq === seq.id && (
-              <div style={{
-                padding: '16px 20px 20px',
-                background: '#060f1c',
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
-              }}>
-                <div style={{ display: 'flex', gap: 20, marginBottom: 14, flexWrap: 'wrap' }}>
-                  {[
-                    { label: 'Read ID', val: seq.id },
-                    { label: 'Length', val: `${seq.len} bp` },
-                    { label: 'GC Content', val: `${seq.gc.toFixed(1)}%` },
-                    { label: 'Region', val: 'COI (Cytochrome Oxidase I)' },
-                    { label: 'Status', val: 'Processed' },
-                  ].map(item => (
-                    <div key={item.label}>
-                      <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: '#3a5577', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 3 }}>
-                        {item.label}
-                      </div>
-                      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: '#dde9f8' }}>
-                        {item.val}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: '#3a5577', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 8 }}>
-                  Full DNA Sequence
-                </div>
-                <div className="dna-chip" style={{
-                  background: '#0b1a2e',
-                  border: '1px solid rgba(20,184,166,0.15)',
-                  borderRadius: 8,
-                  padding: '14px 16px',
-                  fontSize: 12,
-                  opacity: 1,
-                  letterSpacing: '0.06em',
-                  lineHeight: 1.8,
-                }}>
-                  {seq.seq}
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Pagination */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}>
-        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#3a5577' }}>
-          Showing {page * PER_PAGE + 1}–{Math.min((page + 1) * PER_PAGE, filtered.length)} of {filtered.length} records
-        </span>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <button
-            className="btn-outline"
-            style={{ padding: '6px 14px', fontSize: 13 }}
-            onClick={() => setPage(p => Math.max(0, p - 1))}
-            disabled={page === 0}
-          >
-            ← Prev
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i}
-              onClick={() => setPage(i)}
-              style={{
-                padding: '6px 12px', fontSize: 13, borderRadius: 6, border: 'none', cursor: 'pointer',
-                background: page === i ? '#14b8a6' : '#102038',
-                color: page === i ? '#060f1c' : '#7a98b8',
-                fontWeight: page === i ? 700 : 400,
-                fontFamily: 'JetBrains Mono, monospace',
-              }}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button
-            className="btn-outline"
-            style={{ padding: '6px 14px', fontSize: 13 }}
-            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-            disabled={page === totalPages - 1}
-          >
-            Next →
-          </button>
-        </div>
-      </div>
     </div>
-  )
+  );
 }
