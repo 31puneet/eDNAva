@@ -5,6 +5,8 @@ import numpy as np
 from sklearn.feature_extraction import FeatureHasher
 from sklearn.preprocessing import normalize
 from typing import Dict, Any
+import random
+from Bio import SeqIO
 
 _MODEL = None
 _LABEL_ENCODER = None
@@ -71,11 +73,26 @@ def predict_sequence(sequence: str, threshold: float = 0.70) -> Dict[str, Any]:
     }
 
 if __name__ == "__main__":
-    test_seq = "ACGGCTCACAAGGACTGACCGGTGTATGCGTAATGCAAGGTCGCCTGAAACACTGCACGCTTCAATTGAACA"
-    try:
-        print("Testing Predictor Module...")
-        result = predict_sequence(test_seq)
-        print(f"\nResult: {result}")
-    except Exception as e:
-        print(f"Test failed: {e}")
+    print("Testing Predictor Module with REAL data...")
+    
+    fasta_path = os.path.join(os.path.dirname(__file__), "..", "data", "lake_ecosystem.fasta")
+    
+    if not os.path.exists(fasta_path):
+        print("Error: Could not find lake_ecosystem.fasta. Run dataset.py first.")
         sys.exit(1)
+        
+    test_records = [r for r in SeqIO.parse(fasta_path, "fasta") if "|Test" in r.id]
+    
+    if test_records:
+        random_record = random.choice(test_records)
+        actual_species = random_record.id.split('|')[1].replace('_', ' ')
+        real_dna = str(random_record.seq)
+        
+        try:
+            result = predict_sequence(real_dna)
+            print(f"Target: {actual_species}")
+            print(f"Prediction: {result['prediction']} ({result['confidence']}%)")
+            print(f"Match: {result['prediction'] == actual_species}")
+        except Exception as e:
+            print(f"Error: {e}")
+            sys.exit(1)
