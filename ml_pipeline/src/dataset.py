@@ -20,7 +20,7 @@ SPECIES_MAP = {
         "Petromyzon marinus", "Faxonius rusticus"
     ],
     "Other": [
-        "Daphnia pulex", "Chironomus riparius", "Microcystis aeruginosa", 
+        "Daphnia pulex", "Chironomus riparius", "Chelydra serpentina", 
         "Anas platyrhynchos", "Lithobates catesbeianus"
     ]
 }
